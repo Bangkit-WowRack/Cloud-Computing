@@ -14,4 +14,4 @@ RUN npm install --only=dependencies
 COPY . .
 
 # Define the command to run the app
-CMD [ "npm", "start-prod" ]
+CMD [ "npm", "run", "start-prod" ]
