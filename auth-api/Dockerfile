@@ -14,7 +14,7 @@ RUN npm install
 COPY . .
 
 # Expose port 3000 for the app to be accessible
-EXPOSE 3000 80
+EXPOSE 3000 443
 
 # Define the command to run the app
-CMD [ "npm", "run", "start-prod" ]
+CMD [ "npm", "start-prod" ]
