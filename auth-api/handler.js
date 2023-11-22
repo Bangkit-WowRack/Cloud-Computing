@@ -1,5 +1,6 @@
 import Wreck from "@hapi/wreck";
 import { addUserDataDB } from "./controller/controller.js";
+import { syncVMUserData } from "./syncUserDataToDB.js";
 
 export const getOAuthToken = async (req, h) => {
     const client_payload = {
@@ -25,6 +26,8 @@ export const getOAuthToken = async (req, h) => {
 
         // Input user data to Database
         addUserDataDB(detail_user.data);
+        const UserID = detail_user.data.id;
+        syncVMUserData(server_user_detail_request, UserID);
 
         return h.response(user_login_payload).code(res.statusCode);
     } catch (err) {

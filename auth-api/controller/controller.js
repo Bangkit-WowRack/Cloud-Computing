@@ -5,10 +5,7 @@ const users = db.users;
 export const addUserDataDB = async (user_data) => {
     try {
         const { id, username, firstname, lastname, email, timezone } = user_data;
-        const existingUser = await users.findOne({ where: { id } });
-        if (!existingUser) {
-            await users.create({ id, username, firstname, lastname, email, timezone });
-        }
+        await users.upsert({ id, username, firstname, lastname, email, timezone }, { fields: ['id'], returning: true });
     } catch (err) {
         return Boom.internal(err.message);
     }
