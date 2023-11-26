@@ -7,13 +7,11 @@ export default function (sequelize, DataTypes) {
     },
     server_id: {
       type: DataTypes.STRING(50),
-      allowNull: false,
-      primaryKey: true
+      allowNull: false
     },
     user_id: {
       type: DataTypes.SMALLINT,
       allowNull: false,
-      primaryKey: true,
       references: {
         model: 'users',
         key: 'id'
@@ -62,8 +60,6 @@ export default function (sequelize, DataTypes) {
         unique: true,
         fields: [
           { name: "local_id" },
-          { name: "server_id" },
-          { name: "user_id" },
         ]
       },
     ]

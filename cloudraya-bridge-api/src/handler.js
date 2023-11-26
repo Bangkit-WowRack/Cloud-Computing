@@ -1,6 +1,6 @@
 import Wreck from "@hapi/wreck";
-import { addUserDataDB } from "./controller/controller.js";
-import { syncUserData, syncVMUserData } from "./controller/syncUserDataToDB.js";
+import { addUserDataDB } from "../controller/controller.js";
+import { syncUserData, syncVMUserData } from "../controller/syncUserDataToDB.js";
 
 export const getBearerToken = async (req, h) => {
     const client_payload = {
@@ -25,9 +25,11 @@ export const getBearerToken = async (req, h) => {
         const { payload: detail_user } = await Wreck.get('https://api.cloudraya.com/v1/api/gateway/user/detail', server_user_detail_request);
 
         // Input user data to Database
-        addUserDataDB(detail_user.data);
         const UserID = detail_user.data.id;
-        syncVMUserData(server_user_detail_request, UserID);
+        await Promise.all([
+            addUserDataDB(detail_user.data),
+            syncVMUserData(server_user_detail_request, UserID)
+        ]);
 
         return h.response(user_login_payload).code(res.statusCode);
     } catch (err) {
@@ -48,7 +50,7 @@ export const getVMList = async (req, h) => {
         const { res, payload: user_vmlist_payload } = await Wreck.get('https://api.cloudraya.com/v1/api/gateway/user/virtualmachines', client_payload);
 
         // Sync user data to Database
-        syncUserData(client_payload);
+        await syncUserData(client_payload);
 
         return h.response(user_vmlist_payload).code(res.statusCode);
     } catch (err) {
@@ -70,7 +72,7 @@ export const getVMDetail = async (req, h) => {
         const { res, payload: user_vmdetail_payload } = await Wreck.get(`https://api.cloudraya.com/v1/api/gateway/user/virtualmachines/${vm_id}`, client_payload);
 
         // Sync user data to Database
-        syncUserData(client_payload);
+        // await syncUserData(client_payload);
 
         return h.response(user_vmdetail_payload).code(res.statusCode);
     } catch (err) {
@@ -91,7 +93,7 @@ export const getUserDashboard = async (req, h) => {
         const { res, payload: user_userdashboard_payload } = await Wreck.get('https://api.cloudraya.com/v1/api/gateway/user/dashboard/list', client_payload);
 
         // Sync user data to Database
-        syncUserData(client_payload);
+        await syncUserData(client_payload);
 
         return h.response(user_userdashboard_payload).code(res.statusCode);
     } catch (err) {
@@ -112,7 +114,7 @@ export const getUserDetail = async (req, h) => {
         const { res, payload: user_userdetail_payload } = await Wreck.get('https://api.cloudraya.com/v1/api/gateway/user/detail', client_payload);
 
         // Sync user data to Database
-        syncUserData(client_payload);
+        // await syncUserData(client_payload);
 
         return h.response(user_userdetail_payload).code(res.statusCode);
     } catch (err) {
