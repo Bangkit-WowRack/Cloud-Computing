@@ -1,4 +1,5 @@
-export default function (sequelize, DataTypes) {
+const Sequelize = require('sequelize');
+module.exports = function(sequelize, DataTypes) {
   return sequelize.define('otp', {
     id_otp: {
       type: DataTypes.BIGINT,

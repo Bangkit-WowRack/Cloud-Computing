@@ -1,14 +1,19 @@
-export default function (sequelize, DataTypes) {
+const Sequelize = require('sequelize');
+module.exports = function(sequelize, DataTypes) {
   return sequelize.define('vm_bandwith_logs', {
     log_id: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(64),
       allowNull: false,
       primaryKey: true
     },
     local_id: {
-      type: DataTypes.STRING,
+      type: DataTypes.SMALLINT,
       allowNull: false,
-      primaryKey: true
+      primaryKey: true,
+      references: {
+        model: 'vm_list',
+        key: 'local_id'
+      }
     },
     timestamp: {
       type: DataTypes.DATE,
