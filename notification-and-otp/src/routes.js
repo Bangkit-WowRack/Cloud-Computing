@@ -2,8 +2,8 @@ import { getAllBooksHandler } from "./handler.js";
 
 export const routes = [
     {
-      method: 'GET',
-      path: '/books',
-      handler: getAllBooksHandler
+        method: "POST",
+        path: "/v1/api/gateway/user/auth/otp",
+        handler: getAllBooksHandler,
     },
-]
+];
