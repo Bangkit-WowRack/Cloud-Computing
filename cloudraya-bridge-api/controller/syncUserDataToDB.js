@@ -14,15 +14,18 @@ export const syncVMUserData = async (server_user_detail_request, user_id) => {
         let { memory, cpu, os } = vm_detail_user.data;
         await db_vm_list.upsert({ local_id, server_id, user_id, name, status, state, public_ip, private_ip, memory, cpu, os }, { fields: ['local_id'], returning: true });
     });
-    await Promise.all(vmDetailPromises);
 
     // Delete all the VM data in the database if the data does not exist in API call
-    const dataVMinDB = await db_vm_list.findAll({ where: { user_id: user_id } });
-    const dataVMinAPI = vm_list_user.data.servers;
-    const vmToDelete = dataVMinDB.filter(VMinDB => !dataVMinAPI.some(VMinAPI => VMinAPI.local_id === VMinDB.local_id));
-    for (const vm of vmToDelete) {
-        await db_vm_list.destroy({ where: { local_id: vm.local_id } });
+    const deleteVMnoExist = async () => {
+        const dataVMinDB = await db_vm_list.findAll({ where: { user_id: user_id } });
+        const dataVMinAPI = vm_list_user.data.servers;
+        const vmToDelete = dataVMinDB.filter(VMinDB => !dataVMinAPI.some(VMinAPI => VMinAPI.local_id === VMinDB.local_id));
+        for (const vm of vmToDelete) {
+            await db_vm_list.destroy({ where: { local_id: vm.local_id } });
+        }
     }
+
+    await Promise.all([vmDetailPromises, deleteVMnoExist]);
 };
 
 export const syncUserData = async (client_payload) => {
