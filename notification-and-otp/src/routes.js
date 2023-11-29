@@ -3,12 +3,12 @@ import { generateOTPcode, verifyOTPcode } from "./handler.js";
 export const routes = [
     {
         method: "POST",
-        path: "/v1/api/gateway/user/auth/otp",
+        path: "/v1/api/gateway/user/auth/get-otp",
         handler: generateOTPcode,
     },
     {
-        method: "GET",
-        path: "/v1/api/gateway/user/auth/otp",
+        method: "POST",
+        path: "/v1/api/gateway/user/auth/verify-otp",
         handler: verifyOTPcode,
     },
     {

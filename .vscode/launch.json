@@ -24,6 +24,13 @@
                 "minikube": {}
             },
             "watch": true
+        },
+        {
+            "type": "node-terminal",
+            "name": "Run Script: start-dev at notification-and-otp",
+            "request": "launch",
+            "command": "npm run start-dev",
+            "cwd": "${workspaceFolder}\\notification-and-otp"
         }
     ]
 }

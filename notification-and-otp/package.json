@@ -8,7 +8,7 @@
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "node ./src/server.js",
         "start-dev": "nodemon ./src/server.js",
-        "start-prod": "NODE_ENV=production node ./server.js"
+        "start-prod": "NODE_ENV=production node ./src/server.js"
     },
     "keywords": [],
     "author": "",
@@ -23,6 +23,7 @@
     "dependencies": {
         "@hapi/boom": "^10.0.1",
         "@hapi/hapi": "^21.3.2",
+        "nodemailer": "^6.9.7",
         "bcrypt": "^5.1.1",
         "dotenv": "^16.3.1",
         "jsonwebtoken": "^9.0.2",
