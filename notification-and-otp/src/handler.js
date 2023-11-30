@@ -1,12 +1,15 @@
 import db from "../models/index.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { sendMail } from "./mail.js";
-import Wreck from "@hapi/wreck";
+import { sendMail } from "../util/mail.js";
+import { registerDevice } from "../controller/registerDevice.js";
+import { destroyUsedOTP } from "../controller/destroyUsedOTP.js";
+import { handleJwtError } from "./errorHandling.js";
+import { decryptAuthData } from "../util/decryptData.js";
 
 export const generateOTPcode = async (req, h) => {
     try {
-        const { user_id, email } = jwt.verify(
+        const { user_id, email, auth_data_cache } = jwt.verify(
             req.payload.otp_request_token,
             process.env.SECRET_KEY,
         );
@@ -18,8 +21,8 @@ export const generateOTPcode = async (req, h) => {
         });
 
         const otp_code = Math.floor(100000 + Math.random() * 900000).toString(); // generate six-digit OTP
-        const otp_expires_at = Math.floor((Date.now() + 10 * 60 * 1000) / 1000); // store expiry time 10 minutes from now in Unix;
-        const otp_created_at = Math.floor(Date.now() / 1000);
+        const otp_expires_at = Math.floor(Date.now() + 10 * 60 * 1000); // store expiry time 10 minutes from now in Unix;
+        const otp_created_at = Math.floor(Date.now());
 
         //Sending email
         const from_email =
@@ -46,6 +49,7 @@ export const generateOTPcode = async (req, h) => {
             otp_code: otp_hashed,
             generated_at: otp_created_at,
             valid_until: otp_expires_at,
+            auth_data_cache: auth_data_cache,
         });
 
         Promise.all([destroyOTP, createOTP, sendOTP]);
@@ -64,30 +68,12 @@ export const generateOTPcode = async (req, h) => {
         };
         return h.response(otp_request_response).code(200);
     } catch (error) {
-        if (error instanceof jwt.JsonWebTokenError) {
-            // Handle JWT-related error
-            return h
-                .response({ code: 410, error: `JWT error: ${error.message}` })
-                .code(401);
-        } else if (error instanceof jwt.NotBeforeError) {
-            // Handle NotBeforeError
-            return h
-                .response({
-                    code: 411,
-                    error: `JWT not active: ${error.message}`,
-                })
-                .code(401);
-        } else if (error instanceof jwt.TokenExpiredError) {
-            // Handle TokenExpiredError
-            return h
-                .response({
-                    code: 412,
-                    error: `JWT nexpired: ${error.message}`,
-                })
-                .code(401);
+        const jwtErrorResponse = handleJwtError(error, h);
+        if (jwtErrorResponse) {
+            return jwtErrorResponse;
         } else {
             // Handle other errors
-            return h.response(error.message).code(500);
+            return h.response({ code: 401, error: error.message }).code(401);
         }
     }
 };
@@ -101,6 +87,7 @@ export const verifyOTPcode = async (req, h) => {
         const { otp } = req.payload;
 
         let otp_in_db = "";
+        let authDataEncrypted = "";
         await db.otp
             .findOne({
                 where: {
@@ -108,114 +95,48 @@ export const verifyOTPcode = async (req, h) => {
                 },
             })
             .then((otp) => {
+                if (!otp) throw new Error("OTP not valid");
                 otp_in_db = otp.otp_code;
+                authDataEncrypted = otp.auth_data_cache;
             });
 
         const match = await bcrypt.compare(otp, otp_in_db);
         if (match) {
-            await db.otp.destroy({
-                where: {
-                    otp_code: otp_in_db,
-                },
-            });
-            return h.response({ code: 200, message: "success" }).code(200);
+            const authDataDecrypted = decryptAuthData(authDataEncrypted);
+            const new_device_token = await registerDevice(user_id);
+            Promise.all(new_device_token, destroyUsedOTP(otp_in_db));
+            return h
+                .response({
+                    code: 200,
+                    data: {
+                        ...authDataDecrypted.data,
+                        need_otp: false,
+                        device_token: new_device_token,
+                    },
+                })
+                .code(200);
         } else {
             return h
                 .response({ code: 401, error: "OTP is incorrect" })
                 .code(401);
         }
     } catch (error) {
-        if (error instanceof jwt.JsonWebTokenError) {
-            // Handle JWT-related error
-            return h
-                .response({ code: 410, error: `JWT error: ${error.message}` })
-                .code(400);
-        } else if (error instanceof jwt.NotBeforeError) {
-            // Handle NotBeforeError
-            return h
-                .response({
-                    code: 411,
-                    error: `JWT not active: ${error.message}`,
-                })
-                .code(400);
-        } else if (error instanceof jwt.TokenExpiredError) {
-            // Handle TokenExpiredError
-            return h
-                .response({
-                    code: 412,
-                    error: `JWT nexpired: ${error.message}`,
-                })
-                .code(400);
+        const jwtErrorResponse = handleJwtError(error, h);
+        if (jwtErrorResponse) {
+            return jwtErrorResponse;
         } else {
             // Handle other errors
-            return h.response(error.message).code(500);
+            return h.response({ code: 401, error: error.message }).code(401);
         }
     }
 };
 
-export const registerNotifReceiverID = async (req, h) => {
+export const sendingMail = async (req, h) => {
     try {
-        const auth_token = req.headers.authorization;
-        const device_jwt = req.payload.device_jwt;
-        const notifReceiverID = req.payload.notif_receiver_id;
-
-        if (!auth_token || !device_jwt || !notifReceiverID)
-            throw new Error("Your request is not complete");
-
-        const { user_id, device_id } = jwt.verify(
-            device_jwt,
-            process.env.SECRET_KEY,
-        );
-
-        const verifyUser = {
-            headers: {
-                Authorization: auth_token,
-            },
-        };
-        const { payload: detail_user } = await Wreck.get(
-            "https://api.cloudraya.com/v1/api/gateway/user/detail",
-            verifyUser,
-        );
-        if (user_id !== detail_user.data.id)
-            throw new Error(
-                "Auth Token and Device Token didn't match to a user only",
-            );
-
-        let verifyDevice = await db.logged_device
-            .findOne({
-                where: {
-                    user_id: user_id,
-                },
-            })
-            .then((UserDeviceInDB) => {
-                verifyDevice = UserDeviceInDB.device_id;
-            });
-        if (device_id !== verifyDevice)
-            throw new Error(
-                "Device ID in Token didn't match to a device in database",
-            );
-
-        await db.logged_device.update(
-            {
-                notif_receiver_id: notifReceiverID,
-            },
-            {
-                where: {
-                    user_id: user_id,
-                },
-            },
-        );
+        const { from_email, email_subject, email, email_body } = req.payload;
+        await sendMail(from_email, email_subject, email, email_body);
+        return h.response({ code: 200, message: "success" }).code(200);
     } catch (error) {
-        if (error.isBoom) {
-            return h.response(error.data.payload).code(error.data.payload.code);
-        } else {
-            return h
-                .response({
-                    code: 500,
-                    error: error.name,
-                    message: error.message,
-                })
-                .code(500);
-        }
+        return h.response({ code: 500, message: error.message }).code(500);
     }
 };

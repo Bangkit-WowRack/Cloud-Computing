@@ -12,12 +12,8 @@ export default function (sequelize, DataTypes) {
                 allowNull: false,
             },
             expired_at: {
-                type: DataTypes.SMALLINT,
+                type: DataTypes.BIGINT,
                 allowNull: false,
-            },
-            notif_receiver_id: {
-                type: DataTypes.INTEGER,
-                allowNull: true,
             },
         },
         {

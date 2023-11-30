@@ -1,7 +1,5 @@
 import { Sequelize, DataTypes } from "sequelize";
 import * as dbConfig from "../config/config.js";
-import users from "./users.js";
-import vm_list from "./vm_list.js";
 import otp from "./otp.js";
 import logged_device from "./logged_device.js";
 
@@ -25,8 +23,6 @@ const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
-db.users = users(sequelize, DataTypes);
-db.vm_list = vm_list(sequelize, DataTypes);
 db.otp = otp(sequelize, DataTypes);
 db.logged_device = logged_device(sequelize, DataTypes);
 

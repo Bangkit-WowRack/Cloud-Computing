@@ -1,4 +1,5 @@
-export default function (sequelize, DataTypes) {
+const Sequelize = require('sequelize');
+module.exports = function(sequelize, DataTypes) {
   return sequelize.define('vm_list', {
     local_id: {
       type: DataTypes.SMALLINT,
