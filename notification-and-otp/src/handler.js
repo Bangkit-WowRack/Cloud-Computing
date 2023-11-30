@@ -2,6 +2,7 @@ import db from "../models/index.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { sendMail } from "./mail.js";
+import Wreck from "@hapi/wreck";
 
 export const generateOTPcode = async (req, h) => {
     try {
@@ -67,7 +68,7 @@ export const generateOTPcode = async (req, h) => {
             // Handle JWT-related error
             return h
                 .response({ code: 410, error: `JWT error: ${error.message}` })
-                .code(400);
+                .code(401);
         } else if (error instanceof jwt.NotBeforeError) {
             // Handle NotBeforeError
             return h
@@ -75,7 +76,7 @@ export const generateOTPcode = async (req, h) => {
                     code: 411,
                     error: `JWT not active: ${error.message}`,
                 })
-                .code(400);
+                .code(401);
         } else if (error instanceof jwt.TokenExpiredError) {
             // Handle TokenExpiredError
             return h
@@ -83,7 +84,7 @@ export const generateOTPcode = async (req, h) => {
                     code: 412,
                     error: `JWT nexpired: ${error.message}`,
                 })
-                .code(400);
+                .code(401);
         } else {
             // Handle other errors
             return h.response(error.message).code(500);
@@ -112,10 +113,15 @@ export const verifyOTPcode = async (req, h) => {
 
         const match = await bcrypt.compare(otp, otp_in_db);
         if (match) {
+            await db.otp.destroy({
+                where: {
+                    otp_code: otp_in_db,
+                },
+            });
             return h.response({ code: 200, message: "success" }).code(200);
         } else {
             return h
-                .response({ code: 401, error: "Token is incorrect" })
+                .response({ code: 401, error: "OTP is incorrect" })
                 .code(401);
         }
     } catch (error) {
@@ -143,6 +149,73 @@ export const verifyOTPcode = async (req, h) => {
         } else {
             // Handle other errors
             return h.response(error.message).code(500);
+        }
+    }
+};
+
+export const registerNotifReceiverID = async (req, h) => {
+    try {
+        const auth_token = req.headers.authorization;
+        const device_jwt = req.payload.device_jwt;
+        const notifReceiverID = req.payload.notif_receiver_id;
+
+        if (!auth_token || !device_jwt || !notifReceiverID)
+            throw new Error("Your request is not complete");
+
+        const { user_id, device_id } = jwt.verify(
+            device_jwt,
+            process.env.SECRET_KEY,
+        );
+
+        const verifyUser = {
+            headers: {
+                Authorization: auth_token,
+            },
+        };
+        const { payload: detail_user } = await Wreck.get(
+            "https://api.cloudraya.com/v1/api/gateway/user/detail",
+            verifyUser,
+        );
+        if (user_id !== detail_user.data.id)
+            throw new Error(
+                "Auth Token and Device Token didn't match to a user only",
+            );
+
+        let verifyDevice = await db.logged_device
+            .findOne({
+                where: {
+                    user_id: user_id,
+                },
+            })
+            .then((UserDeviceInDB) => {
+                verifyDevice = UserDeviceInDB.device_id;
+            });
+        if (device_id !== verifyDevice)
+            throw new Error(
+                "Device ID in Token didn't match to a device in database",
+            );
+
+        await db.logged_device.update(
+            {
+                notif_receiver_id: notifReceiverID,
+            },
+            {
+                where: {
+                    user_id: user_id,
+                },
+            },
+        );
+    } catch (error) {
+        if (error.isBoom) {
+            return h.response(error.data.payload).code(error.data.payload.code);
+        } else {
+            return h
+                .response({
+                    code: 500,
+                    error: error.name,
+                    message: error.message,
+                })
+                .code(500);
         }
     }
 };

@@ -1,4 +1,8 @@
-import { generateOTPcode, verifyOTPcode } from "./handler.js";
+import {
+    generateOTPcode,
+    registerNotifReceiverID,
+    verifyOTPcode,
+} from "./handler.js";
 
 export const routes = [
     {
@@ -12,8 +16,8 @@ export const routes = [
         handler: verifyOTPcode,
     },
     {
-        method: "POST",
+        method: "PUT",
         path: "/v1/api/gateway/user/notification",
-        handler: verifyOTPcode,
+        handler: registerNotifReceiverID,
     },
 ];
