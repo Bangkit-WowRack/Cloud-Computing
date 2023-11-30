@@ -6,11 +6,13 @@ import {
 } from "../controller/syncUserDataToDB.js";
 import { checkDeviceToken } from "../util/deviceJWT.js";
 import jwt from "jsonwebtoken";
-import * as uuid from "uuid";
 import { syncUserDevice } from "../controller/userDevice.js";
+import db from "../models/index.js";
+import { encryptAuthData } from "../util/encryptData.js";
 
 export const getBearerToken = async (req, h) => {
     const { device_token } = req.payload;
+
     const client_payload = {
         headers: {
             "Content-Type": "application/json",
@@ -41,35 +43,38 @@ export const getBearerToken = async (req, h) => {
         // Check if the device needed to do OTP or not
         const user_id = detail_user.data.id;
         const email = detail_user.data.email;
-        let deviceData = "";
-        try {
-            deviceData = checkDeviceToken(device_token);
-            let new_device_token = "";
-            if (!deviceData.device_id) {
-                const otp_request_token = jwt.sign(
-                    { user_id: user_id, email: email },
-                    process.env.SECRET_KEY,
-                    { expiresIn: "10m" },
-                );
-                const neededOTP_payload = {
-                    code: 200,
-                    data: {
-                        need_otp: true,
-                        otp_request_token: otp_request_token,
-                    },
-                };
-                return h.response(neededOTP_payload).code(200);
-            } else {
-                const deviceID = uuid.v4().replace(/-/g, "").substring(0, 16);
-                new_device_token = jwt.sign(
-                    { deviceId: `${deviceID}`, user_id: `${user_id}` },
-                    process.env.SECRET_KEY,
-                    { expiresIn: "14d" },
-                );
-                user_login_payload.data.device_token = new_device_token;
-            }
-        } catch (error) {
-            h.response({ error: error }).code(400);
+        let deviceData = await checkDeviceToken(device_token);
+        if (deviceData.code === 0) {
+            const encryptedUserAuthData = encryptAuthData(user_login_payload);
+            const otp_request_token = jwt.sign(
+                {
+                    user_id: user_id,
+                    email: email,
+                    auth_data_cache: encryptedUserAuthData,
+                },
+                process.env.SECRET_KEY,
+                { expiresIn: "10m" },
+            );
+            const neededOTP_payload = {
+                code: 200,
+                data: {
+                    need_otp: true,
+                    otp_request_token: otp_request_token,
+                    message: deviceData.message,
+                },
+            };
+            return h.response(neededOTP_payload).code(200);
+        } else {
+            const new_device_token = jwt.sign(
+                {
+                    deviceId: `${deviceData.device_id}`,
+                    user_id: `${deviceData.user_id}`,
+                },
+                process.env.SECRET_KEY,
+                { expiresIn: "14d" },
+            );
+            user_login_payload.data.device_token = new_device_token;
+            user_login_payload.data.need_otp = false;
         }
 
         // Input user data to Database
@@ -89,9 +94,10 @@ export const getBearerToken = async (req, h) => {
         }
 
         return h.response(user_login_payload).code(res.statusCode);
-    } catch (err) {
-        console.log(err.message);
-        return h.response(err.data.payload).code(err.data.payload.code);
+    } catch (error) {
+        if (error.isBoom)
+            return h.response(error.data.payload).code(error.data.payload.code);
+        return h.response({ code: 500, error: error.message }).code(500);
     }
 };
 
@@ -113,9 +119,10 @@ export const getVMList = async (req, h) => {
         await syncUserData(client_payload);
 
         return h.response(user_vmlist_payload).code(res.statusCode);
-    } catch (err) {
-        console.log(err.message);
-        return h.response(err.data.payload).code(err.data.payload.code);
+    } catch (error) {
+        if (error.isBoom)
+            return h.response(error.data.payload).code(error.data.payload.code);
+        return h.response({ code: 500, error: error.message }).code(500);
     }
 };
 
@@ -138,9 +145,10 @@ export const getVMDetail = async (req, h) => {
         // await syncUserData(client_payload);
 
         return h.response(user_vmdetail_payload).code(res.statusCode);
-    } catch (err) {
-        console.log(err.message);
-        return h.response(err.data.payload).code(err.data.payload.code);
+    } catch (error) {
+        if (error.isBoom)
+            return h.response(error.data.payload).code(error.data.payload.code);
+        return h.response({ code: 500, error: error.message }).code(500);
     }
 };
 
@@ -162,9 +170,10 @@ export const getUserDashboard = async (req, h) => {
         await syncUserData(client_payload);
 
         return h.response(user_userdashboard_payload).code(res.statusCode);
-    } catch (err) {
-        console.log(err.message);
-        return h.response(err.data.payload).code(err.data.payload.code);
+    } catch (error) {
+        if (error.isBoom)
+            return h.response(error.data.payload).code(error.data.payload.code);
+        return h.response({ code: 500, error: error.message }).code(500);
     }
 };
 
@@ -186,8 +195,23 @@ export const getUserDetail = async (req, h) => {
         // await syncUserData(client_payload);
 
         return h.response(user_userdetail_payload).code(res.statusCode);
-    } catch (err) {
-        console.log(err.message);
-        return h.response(err.data.payload).code(err.data.payload.code);
+    } catch (error) {
+        if (error.isBoom)
+            return h.response(error.data.payload).code(error.data.payload.code);
+        return h.response({ code: 500, error: error.message }).code(500);
+    }
+};
+
+export const userLogout = async (req, h) => {
+    try {
+        const { user_id } = req.payload;
+        await db.logged_device.deleteAll({
+            where: {
+                user_id: user_id,
+            },
+        });
+        return h.response({ code: 200, message: "success" }).code(200);
+    } catch (error) {
+        return h.response({ code: 500, error: error.message }).code(500);
     }
 };
