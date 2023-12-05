@@ -9,6 +9,7 @@ import jwt from "jsonwebtoken";
 import { syncUserDevice } from "../controller/userDevice.js";
 import db from "../models/index.js";
 import { encryptAuthData } from "../util/encryptData.js";
+import { news } from "../util/response news.js";
 
 export const getBearerToken = async (req, h) => {
     const { device_token } = req.payload;
@@ -214,5 +215,14 @@ export const userLogout = async (req, h) => {
         return h.response({ code: 200, message: "success" }).code(200);
     } catch (error) {
         return h.response({ code: 500, error: error.message }).code(500);
+    }
+};
+
+export const getNews = (req, h) => {
+    try {
+        const news = news;
+        h.response(news).code(200);
+    } catch (error) {
+        h.response({ code: 500, error: error.message }).code(500);
     }
 };

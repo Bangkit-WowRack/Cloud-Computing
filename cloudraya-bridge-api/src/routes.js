@@ -2,6 +2,7 @@
 
 import {
     getBearerToken,
+    getNews,
     getUserDashboard,
     getUserDetail,
     getVMDetail,
@@ -39,5 +40,10 @@ export const routes = [
         method: "PUT",
         path: "/v1/api/gateway/user/auth/logout",
         handler: userLogout,
+    },
+    {
+        method: "GET",
+        path: "/v1/api/gateway/news",
+        handler: getNews,
     },
 ];
