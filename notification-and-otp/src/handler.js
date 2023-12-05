@@ -9,7 +9,7 @@ import { decryptAuthData } from "../util/decryptData.js";
 
 export const generateOTPcode = async (req, h) => {
     try {
-        const { user_id, email, auth_data_cache } = jwt.verify(
+        const { user_id, email, device_id, auth_data_cache } = jwt.verify(
             req.payload.otp_request_token,
             process.env.SECRET_KEY,
         );
@@ -23,6 +23,8 @@ export const generateOTPcode = async (req, h) => {
         const otp_code = Math.floor(100000 + Math.random() * 900000).toString(); // generate six-digit OTP
         const otp_expires_at = Math.floor(Date.now() + 10 * 60 * 1000); // store expiry time 10 minutes from now in Unix;
         const otp_created_at = Math.floor(Date.now());
+
+        console.log(otp_code);
 
         //Sending email
         const from_email =
@@ -55,7 +57,7 @@ export const generateOTPcode = async (req, h) => {
         Promise.all([destroyOTP, createOTP, sendOTP]);
 
         const verify_otp_token = jwt.sign(
-            { user_id: user_id },
+            { user_id: user_id, device_id: device_id },
             process.env.SECRET_KEY,
             { expiresIn: "10m" },
         );
@@ -63,6 +65,7 @@ export const generateOTPcode = async (req, h) => {
             code: 200,
             data: {
                 verify_otp_token: verify_otp_token,
+                user_email: email,
                 message: "success",
             },
         };
@@ -80,7 +83,7 @@ export const generateOTPcode = async (req, h) => {
 
 export const verifyOTPcode = async (req, h) => {
     try {
-        const { user_id } = jwt.verify(
+        const { user_id, device_id } = jwt.verify(
             req.payload.otp_verify_token,
             process.env.SECRET_KEY,
         );
@@ -103,15 +106,15 @@ export const verifyOTPcode = async (req, h) => {
         const match = await bcrypt.compare(otp, otp_in_db);
         if (match) {
             const authDataDecrypted = decryptAuthData(authDataEncrypted);
-            const new_device_token = await registerDevice(user_id);
+            const new_device_token = await registerDevice(user_id, device_id);
             Promise.all(new_device_token, destroyUsedOTP(otp_in_db));
             return h
                 .response({
                     code: 200,
                     data: {
                         ...authDataDecrypted.data,
-                        need_otp: false,
                         device_token: new_device_token,
+                        need_otp: false,
                     },
                 })
                 .code(200);
