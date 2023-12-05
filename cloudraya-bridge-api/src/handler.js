@@ -10,19 +10,25 @@ import { syncUserDevice } from "../controller/userDevice.js";
 import db from "../models/index.js";
 import { encryptAuthData } from "../util/encryptData.js";
 import { news } from "../util/response news.js";
+import { deviceNotRegistered } from "../util/customError.js";
 
 export const getBearerToken = async (req, h) => {
-    const { device_token } = req.payload;
-
+    const auth_payload = {
+        app_key: req.payload.app_key,
+        secret_key: req.payload.secret_key,
+    };
     const client_payload = {
         headers: {
             "Content-Type": "application/json",
         },
-        payload: JSON.stringify(req.payload),
+        payload: JSON.stringify(auth_payload),
         json: true,
     };
 
     try {
+        if (!req.payload.device_token)
+            throw new Error("Device token is required");
+        const { device_token } = req.payload;
         const { res, payload: user_login_payload } = await Wreck.post(
             "https://api.cloudraya.com/v1/api/gateway/user/auth",
             client_payload,
@@ -45,11 +51,12 @@ export const getBearerToken = async (req, h) => {
         const user_id = detail_user.data.id;
         const email = detail_user.data.email;
         let deviceData = await checkDeviceToken(device_token);
-        if (deviceData.code === 0) {
+        if (deviceData instanceof deviceNotRegistered) {
             const encryptedUserAuthData = encryptAuthData(user_login_payload);
             const otp_request_token = jwt.sign(
                 {
                     user_id: user_id,
+                    device_id: deviceData.device_id,
                     email: email,
                     auth_data_cache: encryptedUserAuthData,
                 },
@@ -68,8 +75,8 @@ export const getBearerToken = async (req, h) => {
         } else {
             const new_device_token = jwt.sign(
                 {
-                    deviceId: `${deviceData.device_id}`,
-                    user_id: `${deviceData.user_id}`,
+                    deviceId: deviceData.device_id,
+                    user_id: deviceData.user_id,
                 },
                 process.env.SECRET_KEY,
                 { expiresIn: "14d" },
@@ -98,8 +105,8 @@ export const getBearerToken = async (req, h) => {
         return h.response(user_login_payload).code(res.statusCode);
     } catch (error) {
         if (error.isBoom)
-            return h.response(error.data.payload).code(error.data.payload.code);
-        return h.response({ code: 500, error: error.message }).code(500);
+            return h.response({ code: 401, message: error.code }).code(401);
+        return h.response({ code: 401, error: error.message }).code(401);
     }
 };
 
