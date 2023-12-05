@@ -50,7 +50,7 @@ export const getBearerToken = async (req, h) => {
         // Check if the device needed to do OTP or not
         const user_id = detail_user.data.id;
         const email = detail_user.data.email;
-        let deviceData = await checkDeviceToken(device_token);
+        let deviceData = await checkDeviceToken(device_token, user_id);
         if (deviceData instanceof deviceNotRegistered) {
             const encryptedUserAuthData = encryptAuthData(user_login_payload);
             const otp_request_token = jwt.sign(
@@ -97,7 +97,7 @@ export const getBearerToken = async (req, h) => {
             return h
                 .response({
                     code: 500,
-                    error: "Can't sync user data correctly into database",
+                    error: sequelizeError.message,
                 })
                 .code(500);
         }
@@ -225,11 +225,10 @@ export const userLogout = async (req, h) => {
     }
 };
 
-export const getNews = (req, h) => {
+export const getNews = async (req, h) => {
     try {
-        const news = news;
-        h.response(news).code(200);
+        return h.response(news).code(200);
     } catch (error) {
-        h.response({ code: 500, error: error.message }).code(500);
+        return h.response({ code: 500, error: error.message }).code(500);
     }
 };

@@ -2,11 +2,11 @@ import db from "../models/index.js";
 import jwt from "jsonwebtoken";
 import { jwtDecode } from "jwt-decode";
 import { deviceNotRegistered } from "./customError.js";
-export const checkDeviceToken = async (device_token) => {
+export const checkDeviceToken = async (device_token, user_id_req) => {
     try {
         const device_id = device_token;
-        const timeNow = Date.now() * 1000;
-        let user_id, expired_at;
+        const timeNow = Math.floor(Date.now());
+        let user_id, expired_at, device_id_db;
 
         // Verify device token and recorded device in database
         const loggedDevice = await db.logged_device
@@ -16,15 +16,23 @@ export const checkDeviceToken = async (device_token) => {
                 },
             })
             .then((user_device) => {
-                user_id = user_device.user_id;
-                expired_at = user_device.expired_at;
+                if (user_device) {
+                    device_id_db = user_device.device_id;
+                    user_id = user_device.user_id;
+                    expired_at = parseInt(user_device.expired_at);
+                }
             });
 
-        if (!loggedDevice) {
+        if (!device_id_db) {
             throw new deviceNotRegistered(
                 "The device is not registered",
                 device_id,
             );
+        } else if (
+            device_id_db !== device_id ||
+            user_id !== String(user_id_req)
+        ) {
+            throw new Error("Unconcistent data request and data from database");
         } else if (timeNow >= expired_at) {
             throw new Error("Your device session is expired");
         }
