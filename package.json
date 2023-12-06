@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "@hapi/hapi": "^21.3.2",
+    "@tensorflow/tfjs": "^4.14.0"
+  },
+  "name": "cloud-computing",
+  "description": "This repository includes all of Application Programming Interface to develop CloudRaya Mobile App that have main feature to detect anomaly metrics happen in CloudRaya's Virtual Machine to their respective users",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
