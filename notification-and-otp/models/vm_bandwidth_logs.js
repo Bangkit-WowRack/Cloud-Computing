@@ -1,6 +1,6 @@
 const Sequelize = require('sequelize');
 module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('vm_metric_logs', {
+  return sequelize.define('vm_bandwidth_logs', {
     log_id: {
       autoIncrement: true,
       type: DataTypes.BIGINT,
@@ -17,26 +17,30 @@ module.exports = function(sequelize, DataTypes) {
         key: 'local_id'
       }
     },
-    cpu_used: {
-      type: DataTypes.REAL,
-      allowNull: true
-    },
-    memory_used: {
-      type: DataTypes.REAL,
-      allowNull: true
-    },
     timestamp: {
       type: DataTypes.STRING(30),
+      allowNull: true
+    },
+    sent_usage: {
+      type: DataTypes.REAL,
+      allowNull: true
+    },
+    received_usage: {
+      type: DataTypes.REAL,
+      allowNull: true
+    },
+    bandwidth_usage: {
+      type: DataTypes.REAL,
       allowNull: true
     }
   }, {
     sequelize,
-    tableName: 'vm_metric_logs',
+    tableName: 'vm_bandwidth_logs',
     schema: 'public',
     timestamps: false,
     indexes: [
       {
-        name: "vm_metric_logs_pkey2",
+        name: "vm_bandwidth_logs_pkey",
         unique: true,
         fields: [
           { name: "log_id" },

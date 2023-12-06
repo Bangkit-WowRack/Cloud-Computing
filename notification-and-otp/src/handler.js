@@ -9,6 +9,7 @@ import { decryptAuthData } from "../util/decryptData.js";
 import { initializeApp, applicationDefault } from "firebase-admin/app";
 import { getMessaging } from "firebase-admin/messaging";
 import moment from "moment-timezone";
+import Wreck from "@hapi/wreck";
 
 export const generateOTPcode = async (req, h) => {
     try {
@@ -220,3 +221,55 @@ export const sendingNotif = async (req, res) => {
         return res.response({ code: 500, message: error.message }).code(500);
     }
 };
+
+export const showNotifList = async (req, h) => {
+    try {      
+        const server_user_detail_request = {
+            headers: {
+                Authorization: `${req.headers.authorization}`,
+            },
+            json: true,
+        };
+
+        const { payload: detail_user } = await Wreck.get(
+            "https://api.cloudraya.com/v1/api/gateway/user/detail",
+            server_user_detail_request,
+        );
+        const user_id = detail_user.data.id;
+
+        const page = parseInt(req.query.page) || 1;
+        const size = parseInt(req.query.size) || 5;
+
+        const offset = (page - 1) * size;
+        
+        const items = await db.notifications.findAll({
+            where: {
+                user_id: user_id,
+            },
+            limit: size,
+            offset: offset,
+        });
+
+        let items_converted = [];
+        for (let i = 0; i < items.length; i++) {
+            items_converted.push({
+                title: items[i].message.title,
+                description: items[i].message.description,
+                timestamp: items[i].message.timestamp,
+                vm_id: items[i].vm_id
+            });
+        }
+
+        return h
+        .response({
+            code: 200,
+            data: items_converted,
+            message: "Success get list notifications data",
+        })
+        .code(200);
+    } catch (error) {
+        return h
+            .response({ code: 500, error: error, message: error.message })
+            .code(500);
+    }
+}

@@ -2,6 +2,7 @@ import { Sequelize, DataTypes } from "sequelize";
 import * as dbConfig from "../config/config.js";
 import otp from "./otp.js";
 import logged_device from "./logged_device.js";
+import notifications from "./notifications.js";
 
 const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
     host: dbConfig.HOST,
@@ -25,6 +26,7 @@ db.sequelize = sequelize;
 
 db.otp = otp(sequelize, DataTypes);
 db.logged_device = logged_device(sequelize, DataTypes);
+db.notifications = notifications(sequelize, DataTypes);
 
 // db.sequelize.sync({ force: false }).then(() => {
 //     console.log("re-sync done!");

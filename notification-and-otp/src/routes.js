@@ -1,9 +1,4 @@
-import {
-    generateOTPcode,
-    sendingMail,
-    sendingNotif,
-    verifyOTPcode,
-} from "./handler.js";
+import { generateOTPcode, sendingMail, sendingNotif, showNotifList, verifyOTPcode } from "./handler.js";
 
 export const routes = [
     {
@@ -23,7 +18,12 @@ export const routes = [
     },
     {
         method: "POST",
-        path: "/v1/api/gateway/user/send-notif",
+        path: "/v1/api/gateway/user/auth/send-notif",
         handler: sendingNotif,
+    },
+    {
+        method: "GET",
+        path: "/v1/api/gateway/user/auth/show-notif",
+        handler: showNotifList,
     },
 ];
