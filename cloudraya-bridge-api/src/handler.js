@@ -406,3 +406,57 @@ export const OpenConsoleVM = async (req, h) => {
         return h.response({ code: 500, error: error.message }).code(500);
     }
 };
+
+export const getUsageCPUandMemoryMLModel = async (req, h) => {
+    try {
+        if (!req.payload) throw new Error("VM ID is required");
+        const vm_id = req.payload.vm_id;
+        const start = parseInt(req.query.start) || 0;
+        const size = parseInt(req.query.size) || 3;
+
+        // Fetch VM Specification
+        let total_memory;
+        const vmSpec = await db.vm_list
+            .findOne({
+                where: { local_id: vm_id },
+            })
+            .then((vm) => {
+                if (vm) {
+                    total_memory = vm.memory;
+                }
+            });
+
+        // Fetch the items for the current page from the database
+        const items = await db.vm_metric_logs.findAll({
+            where: {
+                local_id: vm_id,
+            },
+            limit: size,
+            offset: start,
+        });
+
+        Promise.all([vmSpec, items]);
+
+        let items_converted = [];
+        for (let i = 0; i < items.length; i++) {
+            let cpu_used_converted = items[i].cpu_used / 100;
+            let memory_used_converted =
+                items[i].memory_used / (total_memory * 976.5625);
+            items_converted.push({
+                cpuUsed: cpu_used_converted,
+                memoryUsed: memory_used_converted,
+            });
+        }
+
+        // Return the items and pagination metadata
+        return h
+            .response({
+                code: 200,
+                data: items_converted,
+                message: "Success data get Usage VM",
+            })
+            .code(200);
+    } catch (error) {
+        return h.response({ code: 500, error: error.message }).code(500);
+    }
+};

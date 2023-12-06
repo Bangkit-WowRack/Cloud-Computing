@@ -7,6 +7,7 @@ import {
     getNews,
     getUsageBandwidth,
     getUsageCPUandMemory,
+    getUsageCPUandMemoryMLModel,
     getUserDashboard,
     getUserDetail,
     getVMDetail,
@@ -69,5 +70,10 @@ export const routes = [
         method: "POST",
         path: "/v1/api/gateway/user/virtualmachines/open-console",
         handler: OpenConsoleVM,
+    },
+    {
+        method: "POST",
+        path: "/v1/api/virtualmachines/usages",
+        handler: getUsageCPUandMemoryMLModel,
     },
 ];
