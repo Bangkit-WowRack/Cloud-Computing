@@ -34,7 +34,10 @@ export const checkDeviceToken = async (device_token, user_id_req) => {
         ) {
             throw new Error("Unconcistent data request and data from database");
         } else if (timeNow >= expired_at) {
-            throw new Error("Your device session is expired");
+            throw new deviceNotRegistered(
+                "Your device session is expired",
+                device_id,
+            );
         }
 
         // The device not required to do OTP authentication

@@ -1,8 +1,12 @@
 "use strict";
 
 import {
+    OpenConsoleVM,
+    StartStopRebootVM,
     getBearerToken,
     getNews,
+    getUsageBandwidth,
+    getUsageCPUandMemory,
     getUserDashboard,
     getUserDetail,
     getVMDetail,
@@ -45,5 +49,25 @@ export const routes = [
         method: "GET",
         path: "/v1/api/gateway/news",
         handler: getNews,
+    },
+    {
+        method: "POST",
+        path: "/v1/api/virtualmachines/load-graph-usage2",
+        handler: getUsageCPUandMemory,
+    },
+    {
+        method: "GET",
+        path: "/v1/api/virtualmachines/load-bandwidth-usage",
+        handler: getUsageBandwidth,
+    },
+    {
+        method: "POST",
+        path: "/v1/api/gateway/user/virtualmachines/action",
+        handler: StartStopRebootVM,
+    },
+    {
+        method: "POST",
+        path: "/v1/api/gateway/user/virtualmachines/open-console",
+        handler: OpenConsoleVM,
     },
 ];

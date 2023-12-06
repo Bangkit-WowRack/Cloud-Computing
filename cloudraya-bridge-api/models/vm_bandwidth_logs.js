@@ -1,6 +1,6 @@
 export default function (sequelize, DataTypes) {
     return sequelize.define(
-        "vm_metric_logs",
+        "vm_bandwith_logs",
         {
             log_id: {
                 type: DataTypes.STRING(64),
@@ -17,26 +17,30 @@ export default function (sequelize, DataTypes) {
                 },
             },
             timestamp: {
-                type: DataTypes.DATEONLY,
+                type: DataTypes.DATE,
                 allowNull: true,
             },
-            cpu_used: {
+            sent_usage: {
                 type: DataTypes.REAL,
                 allowNull: true,
             },
-            memory_used: {
+            received_usage: {
+                type: DataTypes.REAL,
+                allowNull: true,
+            },
+            bandwith_usage: {
                 type: DataTypes.REAL,
                 allowNull: true,
             },
         },
         {
             sequelize,
-            tableName: "vm_metric_logs",
+            tableName: "vm_bandwith_logs",
             schema: "public",
             timestamps: false,
             indexes: [
                 {
-                    name: "vm_metric_logs_pkey",
+                    name: "vm_bandwith_logs_pkey",
                     unique: true,
                     fields: [{ name: "log_id" }, { name: "local_id" }],
                 },

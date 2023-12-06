@@ -105,8 +105,8 @@ export const getBearerToken = async (req, h) => {
         return h.response(user_login_payload).code(res.statusCode);
     } catch (error) {
         if (error.isBoom)
-            return h.response({ code: 401, message: error.code }).code(401);
-        return h.response({ code: 401, error: error.message }).code(401);
+            return h.response(error.data.payload).code(error.data.payload.code);
+        return h.response({ code: 500, error: error.message }).code(500);
     }
 };
 
@@ -229,6 +229,180 @@ export const getNews = async (req, h) => {
     try {
         return h.response(news).code(200);
     } catch (error) {
+        return h.response({ code: 500, error: error.message }).code(500);
+    }
+};
+
+export const getUsageCPUandMemory = async (req, h) => {
+    try {
+        if (!req.payload) throw new Error("VM ID is required");
+        const vm_id = req.payload.vm_id;
+        const page = parseInt(req.query.page) || 1;
+        const size = parseInt(req.query.size) || 5;
+
+        const offset = (page - 1) * size;
+
+        // Fetch VM Specification
+        let total_memory;
+        const vmSpec = await db.vm_list
+            .findOne({
+                where: { local_id: vm_id },
+            })
+            .then((vm) => {
+                if (vm) {
+                    total_memory = vm.memory;
+                }
+            });
+
+        // Fetch the items for the current page from the database
+        const items = await db.vm_metric_logs.findAll({
+            where: {
+                local_id: vm_id,
+            },
+            limit: size,
+            offset: offset,
+        });
+
+        Promise.all([vmSpec, items]);
+
+        let items_converted = [];
+        for (let i = 0; i < items.length; i++) {
+            let memory_used =
+                (items[i].memory_used / (total_memory * 976.5625)) * 100;
+            items_converted.push({
+                cpuUsed: items[i].cpu_used,
+                memoryUsed: memory_used,
+                timestamp: items[i].timestamp,
+            });
+        }
+
+        // Fetch the total number of items
+        const total = await db.vm_metric_logs.count();
+        const totalPages = Math.ceil(total / size);
+
+        // Return the items and pagination metadata
+        return h
+            .response({
+                code: 200,
+                data: items_converted,
+                message: "Success data get Usage VM",
+            })
+            .code(200);
+    } catch (error) {
+        return h.response({ code: 500, error: error.message }).code(500);
+    }
+};
+
+export const getUsageBandwidth = async (req, h) => {
+    try {
+        if (!req.payload) throw new Error("VM ID is required");
+        const vm_id = req.payload.vm_id;
+        const page = parseInt(req.query.page) || 1;
+        const size = parseInt(req.query.size) || 5;
+
+        const offset = (page - 1) * size;
+
+        // Fetch VM Specification
+        let total_memory;
+        const vmSpec = await db.vm_list
+            .findOne({
+                where: { local_id: vm_id },
+            })
+            .then((vm) => {
+                if (vm) {
+                    total_memory = vm.memory;
+                }
+            });
+
+        // Fetch the items for the current page from the database
+        const items = await db.vm_metric_logs.findAll({
+            where: {
+                local_id: vm_id,
+            },
+            limit: size,
+            offset: offset,
+        });
+
+        Promise.all([vmSpec, items]);
+
+        let items_converted = [];
+        for (let i = 0; i < items.length; i++) {
+            let memory_used =
+                (items[i].memory_used / (total_memory * 976.5625)) * 100;
+            items_converted.push({
+                cpuUsed: items[i].cpu_used,
+                memoryUsed: memory_used,
+                timestamp: items[i].timestamp,
+            });
+        }
+
+        // Fetch the total number of items
+        const total = await db.vm_metric_logs.count();
+        const totalPages = Math.ceil(total / size);
+
+        // Return the items and pagination metadata
+        return h
+            .response({
+                code: 200,
+                data: items_converted,
+                message: "Success data get Usage VM",
+            })
+            .code(200);
+    } catch (error) {
+        return h.response({ code: 500, error: error.message }).code(500);
+    }
+};
+
+export const StartStopRebootVM = async (req, h) => {
+    try {
+        const client_payload = {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${req.headers.authorization}`,
+            },
+            payload: JSON.stringify({
+                vm_id: req.payload.vm_id,
+                request: req.payload.request,
+                release_ip: req.payload.release_ip,
+            }),
+            json: true,
+        };
+
+        const { res, payload: vm_start_response_payload } = await Wreck.post(
+            "https://api.cloudraya.com/v1/api/gateway/user/virtualmachines/action",
+            client_payload,
+        );
+
+        return h.response(vm_start_response_payload).code(res.statusCode);
+    } catch (error) {
+        if (error.isBoom)
+            return h.response(error.data.payload).code(error.data.payload.code);
+        return h.response({ code: 500, error: error.message }).code(500);
+    }
+};
+
+export const OpenConsoleVM = async (req, h) => {
+    try {
+        const client_payload = {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${req.headers.authorization}`,
+            },
+            payload: JSON.stringify({
+                vm_id: req.payload.vm_id,
+            }),
+            json: true,
+        };
+
+        const { res, payload: vm_start_response_payload } = await Wreck.post(
+            "https://api.cloudraya.com/v1/api/gateway/user/virtualmachines/action",
+            client_payload,
+        );
+
+        return h.response(vm_start_response_payload).code(res.statusCode);
+    } catch (error) {
+        if (error.isBoom)
+            return h.response(error.data.payload).code(error.data.payload.code);
         return h.response({ code: 500, error: error.message }).code(500);
     }
 };
