@@ -358,7 +358,7 @@ export const StartStopRebootVM = async (req, h) => {
         const client_payload = {
             headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${req.headers.authorization}`,
+                Authorization: `${req.headers.authorization}`,
             },
             payload: JSON.stringify({
                 vm_id: req.payload.vm_id,
