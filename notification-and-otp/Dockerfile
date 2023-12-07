@@ -7,6 +7,9 @@ WORKDIR /app
 # Copy package.json and package-lock.json to the working directory
 COPY package*.json ./
 
+# Copy the secret file into the container
+COPY cicd-cloudraya-app-firebase-adminsdk-f08wo-e682c3eb74.json /app/cicd-cloudraya-app-firebase-adminsdk-f08wo-e682c3eb74.json
+
 # Install the application dependencies
 RUN npm install
 
