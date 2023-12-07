@@ -136,7 +136,31 @@ export const verifyOTPcode = async (req, h) => {
 
 export const sendingMail = async (req, h) => {
     try {
-        const { from_email, email_subject, email, email_body } = req.payload;
+        const { from_email, email_subject, email, email_body, anomaly } =
+            req.payload;
+        if (anomaly) {
+            const anomaly_from_email =
+                "CloudRaya Anomaly Detection System <bangkitwowrack@gmail.com>";
+            const anomaly_email_body = `
+        <h3>Our system have detected an anomaly on your VM</h3>
+        <h4>The details of your impacted resource: </h4>
+        <h5>Virtual Machine  : ${email_body.vm_name}</h5>
+        <h5>VM ID            : ${email_body.vm_id}</h5>
+        <h5>Impacted Metric  : ${email_body.vm_name}</h5>
+        <h5>Time             : ${Date.toString()}</h5>
+        <b>Check your virtual machine now to make sure the root cause</b>
+        <b>This is an automated alerting system. Don't reply to this message</b> <br>
+        `;
+            const anomaly_email_subject =
+                "Anomaly Detected: Check Your VM Now!";
+            await sendMail(
+                anomaly_from_email,
+                anomaly_email_subject,
+                email,
+                anomaly_email_body,
+            );
+            return h.response({ code: 200, message: "success" }).code(200);
+        }
         await sendMail(from_email, email_subject, email, email_body);
         return h.response({ code: 200, message: "success" }).code(200);
     } catch (error) {
