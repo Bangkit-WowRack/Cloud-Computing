@@ -1,15 +1,17 @@
 export default function (sequelize, DataTypes) {
     return sequelize.define(
-        "vm_bandwith_logs",
+        "vm_bandwidth_logs",
         {
             log_id: {
-                type: DataTypes.STRING(64),
+                autoIncrement: true,
+                type: DataTypes.BIGINT,
                 allowNull: false,
                 primaryKey: true,
             },
             local_id: {
                 type: DataTypes.SMALLINT,
                 allowNull: false,
+                defaultValue: 6380,
                 primaryKey: true,
                 references: {
                     model: "vm_list",
@@ -17,7 +19,7 @@ export default function (sequelize, DataTypes) {
                 },
             },
             timestamp: {
-                type: DataTypes.DATE,
+                type: DataTypes.STRING(30),
                 allowNull: true,
             },
             sent_usage: {
@@ -28,19 +30,19 @@ export default function (sequelize, DataTypes) {
                 type: DataTypes.REAL,
                 allowNull: true,
             },
-            bandwith_usage: {
+            bandwidth_usage: {
                 type: DataTypes.REAL,
                 allowNull: true,
             },
         },
         {
             sequelize,
-            tableName: "vm_bandwith_logs",
+            tableName: "vm_bandwidth_logs",
             schema: "public",
             timestamps: false,
             indexes: [
                 {
-                    name: "vm_bandwith_logs_pkey",
+                    name: "vm_bandwidth_logs_pkey",
                     unique: true,
                     fields: [{ name: "log_id" }, { name: "local_id" }],
                 },

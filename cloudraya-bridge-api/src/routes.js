@@ -57,7 +57,7 @@ export const routes = [
         handler: getUsageCPUandMemory,
     },
     {
-        method: "GET",
+        method: "POST",
         path: "/v1/api/virtualmachines/load-bandwidth-usage",
         handler: getUsageBandwidth,
     },

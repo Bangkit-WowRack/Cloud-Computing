@@ -285,7 +285,7 @@ export const getUsageCPUandMemory = async (req, h) => {
             .response({
                 code: 200,
                 data: items_converted,
-                message: "Success data get Usage VM",
+                message: "Success get Usage VM data",
             })
             .code(200);
     } catch (error) {
@@ -296,26 +296,14 @@ export const getUsageCPUandMemory = async (req, h) => {
 export const getUsageBandwidth = async (req, h) => {
     try {
         if (!req.payload) throw new Error("VM ID is required");
-        const vm_id = req.payload.vm_id;
+        const { vm_id } = req.payload;
         const page = parseInt(req.query.page) || 1;
         const size = parseInt(req.query.size) || 5;
 
         const offset = (page - 1) * size;
 
-        // Fetch VM Specification
-        let total_memory;
-        const vmSpec = await db.vm_list
-            .findOne({
-                where: { local_id: vm_id },
-            })
-            .then((vm) => {
-                if (vm) {
-                    total_memory = vm.memory;
-                }
-            });
-
         // Fetch the items for the current page from the database
-        const items = await db.vm_metric_logs.findAll({
+        const items = await db.vm_bandwidth_logs.findAll({
             where: {
                 local_id: vm_id,
             },
@@ -323,29 +311,32 @@ export const getUsageBandwidth = async (req, h) => {
             offset: offset,
         });
 
-        Promise.all([vmSpec, items]);
-
         let items_converted = [];
         for (let i = 0; i < items.length; i++) {
-            let memory_used =
-                (items[i].memory_used / (total_memory * 976.5625)) * 100;
-            items_converted.push({
-                cpuUsed: items[i].cpu_used,
-                memoryUsed: memory_used,
-                timestamp: items[i].timestamp,
-            });
+            for (let j = 0; j <= 1; j++) {
+                if (j == 0) {
+                    items_converted.push({
+                        usage: items[i].sent_usage,
+                        cost: 0,
+                        type: "sent",
+                        timestamp: items[i].timestamp,
+                    });
+                } else {
+                    items_converted.push({
+                        usage: items[i].received_usage,
+                        cost: 0,
+                        type: "received",
+                        timestamp: items[i].timestamp,
+                    });
+                }
+            }
         }
-
-        // Fetch the total number of items
-        const total = await db.vm_metric_logs.count();
-        const totalPages = Math.ceil(total / size);
-
         // Return the items and pagination metadata
         return h
             .response({
                 code: 200,
                 data: items_converted,
-                message: "Success data get Usage VM",
+                message: "Success get bandwidth VM data",
             })
             .code(200);
     } catch (error) {
