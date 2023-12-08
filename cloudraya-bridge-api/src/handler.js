@@ -97,7 +97,8 @@ export const getBearerToken = async (req, h) => {
             return h
                 .response({
                     code: 500,
-                    error: sequelizeError.message,
+                    error: sequelizeError,
+                    message: sequelizeError.message,
                 })
                 .code(500);
         }
@@ -106,7 +107,9 @@ export const getBearerToken = async (req, h) => {
     } catch (error) {
         if (error.isBoom)
             return h.response(error.data.payload).code(error.data.payload.code);
-        return h.response({ code: 500, error: error.message }).code(500);
+        return h
+            .response({ code: 500, error: error, message: error.message })
+            .code(500);
     }
 };
 
@@ -131,7 +134,9 @@ export const getVMList = async (req, h) => {
     } catch (error) {
         if (error.isBoom)
             return h.response(error.data.payload).code(error.data.payload.code);
-        return h.response({ code: 500, error: error.message }).code(500);
+        return h
+            .response({ code: 500, error: error, message: error.message })
+            .code(500);
     }
 };
 
@@ -157,7 +162,9 @@ export const getVMDetail = async (req, h) => {
     } catch (error) {
         if (error.isBoom)
             return h.response(error.data.payload).code(error.data.payload.code);
-        return h.response({ code: 500, error: error.message }).code(500);
+        return h
+            .response({ code: 500, error: error, message: error.message })
+            .code(500);
     }
 };
 
@@ -182,7 +189,9 @@ export const getUserDashboard = async (req, h) => {
     } catch (error) {
         if (error.isBoom)
             return h.response(error.data.payload).code(error.data.payload.code);
-        return h.response({ code: 500, error: error.message }).code(500);
+        return h
+            .response({ code: 500, error: error, message: error.message })
+            .code(500);
     }
 };
 
@@ -207,7 +216,9 @@ export const getUserDetail = async (req, h) => {
     } catch (error) {
         if (error.isBoom)
             return h.response(error.data.payload).code(error.data.payload.code);
-        return h.response({ code: 500, error: error.message }).code(500);
+        return h
+            .response({ code: 500, error: error, message: error.message })
+            .code(500);
     }
 };
 
@@ -221,7 +232,9 @@ export const userLogout = async (req, h) => {
         });
         return h.response({ code: 200, message: "success" }).code(200);
     } catch (error) {
-        return h.response({ code: 500, error: error.message }).code(500);
+        return h
+            .response({ code: 500, error: error, message: error.message })
+            .code(500);
     }
 };
 
@@ -229,7 +242,9 @@ export const getNews = async (req, h) => {
     try {
         return h.response(news).code(200);
     } catch (error) {
-        return h.response({ code: 500, error: error.message }).code(500);
+        return h
+            .response({ code: 500, error: error, message: error.message })
+            .code(500);
     }
 };
 
@@ -289,7 +304,9 @@ export const getUsageCPUandMemory = async (req, h) => {
             })
             .code(200);
     } catch (error) {
-        return h.response({ code: 500, error: error.message }).code(500);
+        return h
+            .response({ code: 500, error: error, message: error.message })
+            .code(500);
     }
 };
 
@@ -340,7 +357,9 @@ export const getUsageBandwidth = async (req, h) => {
             })
             .code(200);
     } catch (error) {
-        return h.response({ code: 500, error: error.message }).code(500);
+        return h
+            .response({ code: 500, error: error, message: error.message })
+            .code(500);
     }
 };
 
@@ -368,7 +387,9 @@ export const StartStopRebootVM = async (req, h) => {
     } catch (error) {
         if (error.isBoom)
             return h.response(error.data.payload).code(error.data.payload.code);
-        return h.response({ code: 500, error: error.message }).code(500);
+        return h
+            .response({ code: 500, error: error, message: error.message })
+            .code(500);
     }
 };
 
@@ -394,7 +415,9 @@ export const OpenConsoleVM = async (req, h) => {
     } catch (error) {
         if (error.isBoom)
             return h.response(error.data.payload).code(error.data.payload.code);
-        return h.response({ code: 500, error: error.message }).code(500);
+        return h
+            .response({ code: 500, error: error, message: error.message })
+            .code(500);
     }
 };
 
@@ -448,6 +471,8 @@ export const getUsageCPUandMemoryMLModel = async (req, h) => {
             })
             .code(200);
     } catch (error) {
-        return h.response({ code: 500, error: error.message }).code(500);
+        return h
+            .response({ code: 500, error: error, message: error.message })
+            .code(500);
     }
 };
