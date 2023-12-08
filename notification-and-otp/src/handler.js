@@ -6,7 +6,7 @@ import { registerDevice } from "../controller/registerDevice.js";
 import { destroyUsedOTP } from "../controller/destroyUsedOTP.js";
 import { handleJwtError } from "./errorHandling.js";
 import { decryptAuthData } from "../util/decryptData.js";
-import {initializeApp, applicationDefault } from 'firebase-admin/app';
+import { initializeApp, applicationDefault } from "firebase-admin/app";
 import { getMessaging } from "firebase-admin/messaging";
 
 export const generateOTPcode = async (req, h) => {
@@ -75,7 +75,9 @@ export const generateOTPcode = async (req, h) => {
             return jwtErrorResponse;
         } else {
             // Handle other errors
-            return h.response({ code: 401, error: error.message }).code(401);
+            return h
+                .response({ code: 401, error: error, message: error.message })
+                .code(401);
         }
     }
 };
@@ -114,12 +116,17 @@ export const verifyOTPcode = async (req, h) => {
                         ...authDataDecrypted.data,
                         need_otp: false,
                         device_token: new_device_token,
+                        message: "success",
                     },
                 })
                 .code(200);
         } else {
             return h
-                .response({ code: 401, error: "OTP is incorrect" })
+                .response({
+                    code: 401,
+                    error: "OTP",
+                    message: "OTP is incorrect",
+                })
                 .code(401);
         }
     } catch (error) {
@@ -128,7 +135,9 @@ export const verifyOTPcode = async (req, h) => {
             return jwtErrorResponse;
         } else {
             // Handle other errors
-            return h.response({ code: 401, error: error.message }).code(401);
+            return h
+                .response({ code: 401, error: error, message: error.message })
+                .code(401);
         }
     }
 };
@@ -163,46 +172,48 @@ export const sendingMail = async (req, h) => {
         await sendMail(from_email, email_subject, email, email_body);
         return h.response({ code: 200, message: "success" }).code(200);
     } catch (error) {
-        return h.response({ code: 500, message: error.message }).code(500);
+        return h
+            .response({ code: 500, error: error, message: error.message })
+            .code(500);
     }
 };
 
 export const sendingNotif = async (req, res) => {
     try {
         process.env.GOOGLE_APPLICATION_CREDENTIALS;
-        
+
         res.header("Content-Type", "application/json");
 
         initializeApp({
             credential: applicationDefault(),
-            projectId: 'cicd-cloudraya-app',
+            projectId: "cicd-cloudraya-app",
         });
 
         const receivedToken = req.body.fcmToken;
-  
+
         const message = {
-                notification: {
+            notification: {
                 title: "Notif by FCM",
-                body: 'This is a Test Notification'
+                body: "This is a Test Notification",
             },
             token: receivedToken,
         };
 
         getMessaging()
-        .send(message)
-        .then((response) => {
-            res.status(200).json({
-                message: "Successfully sent message",
-                token: receivedToken,
+            .send(message)
+            .then((response) => {
+                res.status(200).json({
+                    message: "Successfully sent message",
+                    token: receivedToken,
+                });
+                console.log("Successfully sent message:", response);
+            })
+            .catch((error) => {
+                res.status(400);
+                res.send(error);
+                console.log("Error sending message:", error);
             });
-            console.log("Successfully sent message:", response);
-        })
-        .catch((error) => {
-            res.status(400);
-            res.send(error);
-            console.log("Error sending message:", error);
-        });
     } catch (error) {
         return res.response({ code: 500, message: error.message }).code(500);
     }
-}
+};

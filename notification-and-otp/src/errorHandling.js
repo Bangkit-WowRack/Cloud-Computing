@@ -10,7 +10,8 @@ export const handleJwtError = (error, h) => {
         return h
             .response({
                 code: 401,
-                error: `JWT not active: ${error.message}`,
+                error: error,
+                message: `JWT not active: ${error.message}`,
             })
             .code(401);
     } else if (error instanceof jwt.TokenExpiredError) {
@@ -18,7 +19,8 @@ export const handleJwtError = (error, h) => {
         return h
             .response({
                 code: 401,
-                error: `JWT expired: ${error.message}`,
+                error: error,
+                message: `JWT expired: ${error.message}`,
             })
             .code(401);
     } else {
