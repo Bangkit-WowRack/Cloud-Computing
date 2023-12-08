@@ -3,11 +3,16 @@ export default function (sequelize, DataTypes) {
         "notifications",
         {
             id_notification: {
-                type: DataTypes.STRING(64),
+                autoIncrement: true,
+                type: DataTypes.BIGINT,
                 allowNull: false,
                 primaryKey: true,
             },
-            id_vm: {
+            user_id: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+            },
+            vm_id: {
                 type: DataTypes.SMALLINT,
                 allowNull: false,
                 primaryKey: true,
@@ -28,9 +33,9 @@ export default function (sequelize, DataTypes) {
             timestamps: false,
             indexes: [
                 {
-                    name: "notifications_pkey",
+                    name: "notifications_pkey1",
                     unique: true,
-                    fields: [{ name: "id_notification" }, { name: "id_vm" }],
+                    fields: [{ name: "id_notification" }, { name: "vm_id" }],
                 },
             ],
         }
