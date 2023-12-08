@@ -11,6 +11,7 @@ export default function (sequelize, DataTypes) {
             user_id: {
                 type: DataTypes.INTEGER,
                 allowNull: false,
+                primaryKey: true,
             },
             vm_id: {
                 type: DataTypes.SMALLINT,
@@ -35,9 +36,13 @@ export default function (sequelize, DataTypes) {
                 {
                     name: "notifications_pkey1",
                     unique: true,
-                    fields: [{ name: "id_notification" }, { name: "vm_id" }],
+                    fields: [
+                        { name: "id_notification" },
+                        { name: "vm_id" },
+                        { name: "user_id" },
+                    ],
                 },
             ],
-        }
+        },
     );
 }

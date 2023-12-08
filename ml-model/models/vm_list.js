@@ -64,6 +64,6 @@ export default function (sequelize, DataTypes) {
                     fields: [{ name: "local_id" }],
                 },
             ],
-        }
+        },
     );
 }

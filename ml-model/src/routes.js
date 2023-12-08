@@ -1,6 +1,6 @@
 "use strict";
 
-import { getAnomalyDetect, getBearerToken } from "./handler.js";
+import { getAnomalyDetect } from "./handler.js";
 
 export const routes = [
     {

@@ -31,12 +31,12 @@ export const getAnomalyDetect = async (req, h) => {
         let count = 0;
         let cpu_anomaly_detected = 0;
         let memory_anomaly_detected = 0;
-        const maxRepeats = 996;
+        const maxRepeats = 200;
         const execute = async () => {
             try {
                 const { res, payload: vm_usage_payload } = await Wreck.post(
                     `https://cloudraya.e-cloud.ch/v1/api/virtualmachines/usages?start=${count}&size=3`,
-                    client_payload
+                    client_payload,
                 );
 
                 let email_body = { vm_name: vm_name, vm_id: vm_id };
@@ -44,7 +44,7 @@ export const getAnomalyDetect = async (req, h) => {
                 const sendMail = async (email_body) => {
                     const { res, payload: vm_usage_payload } = await Wreck.post(
                         `https://cloudraya.e-cloud.ch/v1/api/gateway/user/auth/send-mail`,
-                        email_body
+                        email_body,
                     );
                 };
 
@@ -52,7 +52,7 @@ export const getAnomalyDetect = async (req, h) => {
                 for (let i = 0; i <= 1; i++) {
                     if (i === 0) {
                         cpu_data = vm_usage_payload.data.map(
-                            (data) => data.cpuUsed
+                            (data) => data.cpuUsed,
                         );
                         data = tf.tensor2d([cpu_data]);
                         predict = await ml_model.then((model) => {
@@ -65,24 +65,24 @@ export const getAnomalyDetect = async (req, h) => {
                             console.log("CPU Anomaly");
                             cpu_anomaly_detected++;
 
-                            // Send to email and notif to mobile
-                            email_body.anomaly_type = "CPU";
-                            await sendMail({ email_body });
+                            // // Send to email and notif to mobile
+                            // email_body.anomaly_type = "CPU";
+                            // await sendMail({ email_body });
 
-                            // Save notification in DB
-                            await db.notifications.create({
-                                user_id: user_id,
-                                vm_id: vm_id,
-                                message: JSON.stringify({
-                                    title: `CPU Anomaly Detected`,
-                                    description: `Check your virtual machine (${vm_name}) now to make sure the root cause`,
-                                    timestamp: `${Date.toString()}`,
-                                }),
-                            });
+                            // // Save notification in DB
+                            // await db.notifications.create({
+                            //     user_id: user_id,
+                            //     vm_id: vm_id,
+                            //     message: JSON.stringify({
+                            //         title: `CPU Anomaly Detected`,
+                            //         description: `Check your virtual machine (${vm_name}) now to make sure the root cause`,
+                            //         timestamp: `${Date.toString()}`,
+                            //     }),
+                            // });
                         }
                     } else {
                         memory_data = vm_usage_payload.data.map(
-                            (data) => data.memoryUsed
+                            (data) => data.memoryUsed,
                         );
                         data = tf.tensor2d([memory_data]);
                         predict = await ml_model.then((model) => {
@@ -93,22 +93,21 @@ export const getAnomalyDetect = async (req, h) => {
                         if (result > 0.5) {
                             console.log("Memory Anomaly");
                             memory_anomaly_detected++;
-                            anomaly_type = "Memory";
 
-                            // Send to email and notif to mobile
-                            email_body.anomaly_type = "Memory";
-                            await sendMail({ email_body });
+                            // // Send to email and notif to mobile
+                            // email_body.anomaly_type = "Memory";
+                            // await sendMail({ email_body });
 
-                            // Save notification in DB
-                            await db.notifications.create({
-                                user_id: user_id,
-                                vm_id: vm_id,
-                                message: JSON.stringify({
-                                    title: "Memory Anomaly Detected",
-                                    description: `Check your virtual machine now (${vm_name}) to make sure the root cause`,
-                                    timestamp: `${Date.toString()}`,
-                                }),
-                            });
+                            // // Save notification in DB
+                            // await db.notifications.create({
+                            //     user_id: user_id,
+                            //     vm_id: vm_id,
+                            //     message: JSON.stringify({
+                            //         title: "Memory Anomaly Detected",
+                            //         description: `Check your virtual machine now (${vm_name}) to make sure the root cause`,
+                            //         timestamp: `${Date.toString()}`,
+                            //     }),
+                            // });
                         }
                     }
                 }
@@ -132,6 +131,8 @@ export const getAnomalyDetect = async (req, h) => {
             })
             .code(200);
     } catch (err) {
-        return h.response({ code: 500, message: err.message }).code(500);
+        return h
+            .response({ code: 500, error: err, message: err.message })
+            .code(500);
     }
 };

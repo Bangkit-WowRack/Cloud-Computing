@@ -40,6 +40,6 @@ export default function (sequelize, DataTypes) {
                     fields: [{ name: "id" }],
                 },
             ],
-        }
+        },
     );
 }
