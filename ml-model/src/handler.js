@@ -15,7 +15,7 @@ export const getAnomalyDetect = async (req, h) => {
         let count = 0;
         let cpu_anomaly_detected = 0;
         let memory_anomaly_detected = 0;
-        const maxRepeats = 996; // Replace with the number of times you want to repeat the code
+        const maxRepeats = 996;
         const execute = async () => {
             try {
                 const { res, payload: vm_usage_payload } = await Wreck.post(
