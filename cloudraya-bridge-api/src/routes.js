@@ -53,12 +53,12 @@ export const routes = [
     },
     {
         method: "POST",
-        path: "/v1/api/virtualmachines/load-graph-usage2",
+        path: "/v1/api/gateway/user/virtualmachines/usages",
         handler: getUsageCPUandMemory,
     },
     {
         method: "POST",
-        path: "/v1/api/virtualmachines/load-bandwidth-usage",
+        path: "/v1/api/gateway/user/virtualmachines/bandwidths",
         handler: getUsageBandwidth,
     },
     {
