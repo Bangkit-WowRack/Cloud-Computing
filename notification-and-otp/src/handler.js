@@ -8,10 +8,11 @@ import { handleJwtError } from "./errorHandling.js";
 import { decryptAuthData } from "../util/decryptData.js";
 import { initializeApp, applicationDefault } from "firebase-admin/app";
 import { getMessaging } from "firebase-admin/messaging";
+import moment from "moment-timezone";
 
 export const generateOTPcode = async (req, h) => {
     try {
-        const { user_id, email, auth_data_cache } = jwt.verify(
+        const { user_id, email, device_id, auth_data_cache } = jwt.verify(
             req.payload.otp_request_token,
             process.env.SECRET_KEY,
         );
@@ -57,7 +58,7 @@ export const generateOTPcode = async (req, h) => {
         Promise.all([destroyOTP, createOTP, sendOTP]);
 
         const verify_otp_token = jwt.sign(
-            { user_id: user_id },
+            { user_id: user_id, device_id: device_id },
             process.env.SECRET_KEY,
             { expiresIn: "10m" },
         );
@@ -65,6 +66,7 @@ export const generateOTPcode = async (req, h) => {
             code: 200,
             data: {
                 verify_otp_token: verify_otp_token,
+                user_email: email,
                 message: "success",
             },
         };
@@ -84,7 +86,7 @@ export const generateOTPcode = async (req, h) => {
 
 export const verifyOTPcode = async (req, h) => {
     try {
-        const { user_id } = jwt.verify(
+        const { user_id, device_id } = jwt.verify(
             req.payload.otp_verify_token,
             process.env.SECRET_KEY,
         );
@@ -107,7 +109,7 @@ export const verifyOTPcode = async (req, h) => {
         const match = await bcrypt.compare(otp, otp_in_db);
         if (match) {
             const authDataDecrypted = decryptAuthData(authDataEncrypted);
-            const new_device_token = await registerDevice(user_id);
+            const new_device_token = await registerDevice(user_id, device_id);
             Promise.all(new_device_token, destroyUsedOTP(otp_in_db));
             return h
                 .response({
@@ -147,6 +149,7 @@ export const sendingMail = async (req, h) => {
         const { from_email, email_subject, email, email_body, anomaly } =
             req.payload;
         if (anomaly) {
+            const time = moment().tz(email_body.timezone).format();
             const anomaly_from_email =
                 "CloudRaya Anomaly Detection System <bangkitwowrack@gmail.com>";
             const anomaly_email_body = `
@@ -154,8 +157,8 @@ export const sendingMail = async (req, h) => {
         <h4>The details of your impacted resource: </h4>
         <h5>Virtual Machine  : ${email_body.vm_name}</h5>
         <h5>VM ID            : ${email_body.vm_id}</h5>
-        <h5>Impacted Metric  : ${email_body.vm_name}</h5>
-        <h5>Time             : ${Date.toString()}</h5>
+        <h5>Impacted Metric  : ${email_body.anomaly_type}</h5>
+        <h5>Time             : ${time} ${email_body.timezone} Timezone</h5>
         <b>Check your virtual machine now to make sure the root cause</b>
         <b>This is an automated alerting system. Don't reply to this message</b> <br>
         `;

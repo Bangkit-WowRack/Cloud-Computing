@@ -3,7 +3,7 @@ export const handleJwtError = (error, h) => {
     if (error instanceof jwt.JsonWebTokenError) {
         // Handle JWT-related error
         return h
-            .response({ code: 401, error: `JWT error: ${error.message}` })
+            .response({ code: 401, error: `Your session is not valid` })
             .code(401);
     } else if (error instanceof jwt.NotBeforeError) {
         // Handle NotBeforeError
@@ -11,7 +11,7 @@ export const handleJwtError = (error, h) => {
             .response({
                 code: 401,
                 error: error,
-                message: `JWT not active: ${error.message}`,
+                message: `Your session is unknown`,
             })
             .code(401);
     } else if (error instanceof jwt.TokenExpiredError) {
@@ -20,7 +20,7 @@ export const handleJwtError = (error, h) => {
             .response({
                 code: 401,
                 error: error,
-                message: `JWT expired: ${error.message}`,
+                message: `Your session has ended`,
             })
             .code(401);
     } else {
