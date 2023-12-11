@@ -14,8 +14,8 @@ export const getAnomalyDetect = async (req, h) => {
             json: true,
         };
 
-        let vm_name, user_id;
-        db.vm_list
+        let vm_name, user_id, user_email;
+        await db.vm_list
             .findOne({
                 where: {
                     local_id: vm_id,
@@ -28,25 +28,47 @@ export const getAnomalyDetect = async (req, h) => {
                 }
             });
 
+        await db.users
+            .findOne({
+                where: {
+                    id: user_id,
+                },
+            })
+            .then((user) => {
+                if (user) user_email = user.email;
+            });
+
+        let email_body = { vm_name: vm_name, vm_id: vm_id };
+        let sendmail_payload = {
+            headers: {
+                "Content-Type": "application/json",
+            },
+            payload: JSON.stringify({
+                email: user_email,
+                email_body: email_body,
+                anomaly: true,
+            }),
+            json: true,
+        };
+
+        const sendMail = async (sendmail_payload) => {
+            const { res, payload: vm_usage_payload } = await Wreck.post(
+                `https://cloudraya.e-cloud.ch/v1/api/gateway/user/send-mail`,
+                sendmail_payload,
+            );
+        };
+
         let count = 0;
+        // let single_anomaly = false;
         let cpu_anomaly_detected = 0;
         let memory_anomaly_detected = 0;
-        const maxRepeats = 200;
+        const maxRepeats = 996;
         const execute = async () => {
             try {
                 const { res, payload: vm_usage_payload } = await Wreck.post(
                     `https://cloudraya.e-cloud.ch/v1/api/virtualmachines/usages?start=${count}&size=3`,
                     client_payload,
                 );
-
-                let email_body = { vm_name: vm_name, vm_id: vm_id };
-
-                const sendMail = async (email_body) => {
-                    const { res, payload: vm_usage_payload } = await Wreck.post(
-                        `https://cloudraya.e-cloud.ch/v1/api/gateway/user/auth/send-mail`,
-                        email_body,
-                    );
-                };
 
                 let data, predict, result, cpu_data, memory_data;
                 for (let i = 0; i <= 1; i++) {
@@ -65,20 +87,26 @@ export const getAnomalyDetect = async (req, h) => {
                             console.log("CPU Anomaly");
                             cpu_anomaly_detected++;
 
-                            // // Send to email and notif to mobile
-                            // email_body.anomaly_type = "CPU";
-                            // await sendMail({ email_body });
+                            // Send to email and notif to mobile
+                            email_body.anomaly_type = "CPU";
+                            // single_anomaly = true;
+                            // try {
+                            //     await sendMail(sendmail_payload);
+                            // } catch (error) {
+                            //     console.error(error.message);
+                            //     throw error;
+                            // }
 
-                            // // Save notification in DB
-                            // await db.notifications.create({
-                            //     user_id: user_id,
-                            //     vm_id: vm_id,
-                            //     message: JSON.stringify({
-                            //         title: `CPU Anomaly Detected`,
-                            //         description: `Check your virtual machine (${vm_name}) now to make sure the root cause`,
-                            //         timestamp: `${Date.toString()}`,
-                            //     }),
-                            // });
+                            // Save notification in DB
+                            await db.notifications.create({
+                                user_id: user_id,
+                                vm_id: vm_id,
+                                message: {
+                                    title: `CPU Anomaly Detected`,
+                                    description: `Check your virtual machine (${vm_name}) now to make sure the root cause`,
+                                    timestamp: Math.floor(Date.now()),
+                                },
+                            });
                         }
                     } else {
                         memory_data = vm_usage_payload.data.map(
@@ -94,20 +122,26 @@ export const getAnomalyDetect = async (req, h) => {
                             console.log("Memory Anomaly");
                             memory_anomaly_detected++;
 
-                            // // Send to email and notif to mobile
-                            // email_body.anomaly_type = "Memory";
-                            // await sendMail({ email_body });
+                            // Send to email and notif to mobile
+                            email_body.anomaly_type = "Memory";
+                            // single_anomaly = true;
+                            // try {
+                            //     await sendMail(sendmail_payload);
+                            // } catch (error) {
+                            //     console.error(error.message);
+                            //     throw error;
+                            // }
 
-                            // // Save notification in DB
-                            // await db.notifications.create({
-                            //     user_id: user_id,
-                            //     vm_id: vm_id,
-                            //     message: JSON.stringify({
-                            //         title: "Memory Anomaly Detected",
-                            //         description: `Check your virtual machine now (${vm_name}) to make sure the root cause`,
-                            //         timestamp: `${Date.toString()}`,
-                            //     }),
-                            // });
+                            // Save notification in DB
+                            await db.notifications.create({
+                                user_id: user_id,
+                                vm_id: vm_id,
+                                message: {
+                                    title: `Memory Anomaly Detected`,
+                                    description: `Check your virtual machine (${vm_name}) now to make sure the root cause`,
+                                    timestamp: Math.floor(Date.now()),
+                                },
+                            });
                         }
                     }
                 }
