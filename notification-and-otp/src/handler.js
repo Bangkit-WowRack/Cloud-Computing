@@ -248,6 +248,7 @@ export const showNotifList = async (req, h) => {
             },
             limit: size,
             offset: offset,
+            order: [["id_notification", "DESC"]],
         });
 
         let items_converted = [];
