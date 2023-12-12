@@ -398,7 +398,7 @@ export const OpenConsoleVM = async (req, h) => {
         const client_payload = {
             headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${req.headers.authorization}`,
+                Authorization: `${req.headers.authorization}`,
             },
             payload: JSON.stringify({
                 vm_id: req.payload.vm_id,
@@ -407,7 +407,7 @@ export const OpenConsoleVM = async (req, h) => {
         };
 
         const { res, payload: vm_start_response_payload } = await Wreck.post(
-            "https://api.cloudraya.com/v1/api/gateway/user/virtualmachines/action",
+            "https://api.cloudraya.com/v1/api/gateway/user/virtualmachines/open-console",
             client_payload,
         );
 
