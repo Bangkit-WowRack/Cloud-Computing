@@ -254,6 +254,7 @@ export const showNotifList = async (req, h) => {
         let items_converted = [];
         for (let i = 0; i < items.length; i++) {
             items_converted.push({
+                id: items[i].id_notification,
                 title: items[i].message.title,
                 description: items[i].message.description,
                 timestamp: items[i].message.timestamp,
@@ -269,6 +270,8 @@ export const showNotifList = async (req, h) => {
             })
             .code(200);
     } catch (error) {
+        if (error.isBoom)
+            return h.response(error.data.payload).code(error.data.payload.code);
         return h
             .response({ code: 500, error: error, message: error.message })
             .code(500);
