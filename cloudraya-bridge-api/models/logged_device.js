@@ -3,13 +3,18 @@ export default function (sequelize, DataTypes) {
         "logged_device",
         {
             device_id: {
-                type: DataTypes.STRING(16),
+                type: DataTypes.STRING(40),
                 allowNull: false,
                 primaryKey: true,
             },
             user_id: {
-                type: DataTypes.STRING(10),
+                type: DataTypes.SMALLINT,
                 allowNull: false,
+                primaryKey: true,
+                references: {
+                    model: "users",
+                    key: "id",
+                },
             },
             expired_at: {
                 type: DataTypes.BIGINT,
@@ -25,7 +30,7 @@ export default function (sequelize, DataTypes) {
                 {
                     name: "logged_device_pk",
                     unique: true,
-                    fields: [{ name: "device_id" }],
+                    fields: [{ name: "device_id" }, { name: "user_id" }],
                 },
             ],
         },

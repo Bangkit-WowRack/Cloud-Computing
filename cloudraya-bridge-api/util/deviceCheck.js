@@ -28,10 +28,7 @@ export const checkDeviceToken = async (device_token, user_id_req) => {
                 "The device is not registered",
                 device_id,
             );
-        } else if (
-            device_id_db !== device_id ||
-            user_id !== String(user_id_req)
-        ) {
+        } else if (device_id_db !== device_id || user_id != user_id_req) {
             throw new Error("Unconcistent data request and data from database");
         } else if (timeNow >= expired_at) {
             throw new deviceNotRegistered(

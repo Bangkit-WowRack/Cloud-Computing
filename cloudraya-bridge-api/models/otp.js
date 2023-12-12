@@ -10,7 +10,7 @@ export default function (sequelize, DataTypes) {
             },
             user_id: {
                 type: DataTypes.SMALLINT,
-                allowNull: false,
+                allowNull: true,
                 references: {
                     model: "users",
                     key: "id",
@@ -18,22 +18,22 @@ export default function (sequelize, DataTypes) {
             },
             user_email: {
                 type: DataTypes.STRING(100),
-                allowNull: false,
+                allowNull: true,
             },
             otp_code: {
                 type: DataTypes.STRING(200),
-                allowNull: false,
+                allowNull: true,
             },
             generated_at: {
-                type: DataTypes.INTEGER,
-                allowNull: false,
+                type: DataTypes.BIGINT,
+                allowNull: true,
             },
             valid_until: {
-                type: DataTypes.INTEGER,
-                allowNull: false,
+                type: DataTypes.BIGINT,
+                allowNull: true,
             },
             auth_data_cache: {
-                type: DataTypes.STRING(255),
+                type: DataTypes.TEXT,
                 allowNull: true,
             },
         },

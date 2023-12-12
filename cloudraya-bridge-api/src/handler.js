@@ -4,7 +4,7 @@ import {
     syncUserData,
     syncVMUserData,
 } from "../controller/syncUserDataToDB.js";
-import { checkDeviceToken } from "../util/deviceJWT.js";
+import { checkDeviceToken } from "../util/deviceCheck.js";
 import jwt from "jsonwebtoken";
 import { syncUserDevice } from "../controller/userDevice.js";
 import db from "../models/index.js";

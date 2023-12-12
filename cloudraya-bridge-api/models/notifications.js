@@ -2,14 +2,23 @@ const Sequelize = require('sequelize');
 module.exports = function(sequelize, DataTypes) {
   return sequelize.define('notifications', {
     id_notification: {
-      type: DataTypes.STRING(64),
+      autoIncrement: true,
+      type: DataTypes.BIGINT,
       allowNull: false,
       primaryKey: true
     },
-    id_vm: {
+    user_id: {
       type: DataTypes.SMALLINT,
       allowNull: false,
       primaryKey: true,
+      references: {
+        model: 'users',
+        key: 'id'
+      }
+    },
+    vm_id: {
+      type: DataTypes.SMALLINT,
+      allowNull: false,
       references: {
         model: 'vm_list',
         key: 'local_id'
@@ -26,11 +35,11 @@ module.exports = function(sequelize, DataTypes) {
     timestamps: false,
     indexes: [
       {
-        name: "notifications_pkey",
+        name: "notifications_pkey1",
         unique: true,
         fields: [
           { name: "id_notification" },
-          { name: "id_vm" },
+          { name: "user_id" },
         ]
       },
     ]
