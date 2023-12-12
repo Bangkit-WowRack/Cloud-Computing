@@ -223,7 +223,7 @@ export const sendingNotif = async (req, res) => {
 };
 
 export const showNotifList = async (req, h) => {
-    try {      
+    try {
         const server_user_detail_request = {
             headers: {
                 Authorization: `${req.headers.authorization}`,
@@ -241,7 +241,7 @@ export const showNotifList = async (req, h) => {
         const size = parseInt(req.query.size) || 5;
 
         const offset = (page - 1) * size;
-        
+
         const items = await db.notifications.findAll({
             where: {
                 user_id: user_id,
@@ -256,20 +256,20 @@ export const showNotifList = async (req, h) => {
                 title: items[i].message.title,
                 description: items[i].message.description,
                 timestamp: items[i].message.timestamp,
-                vm_id: items[i].vm_id
+                vm_id: items[i].vm_id,
             });
         }
 
         return h
-        .response({
-            code: 200,
-            data: items_converted,
-            message: "Success get list notifications data",
-        })
-        .code(200);
+            .response({
+                code: 200,
+                data: items_converted,
+                message: "Success get list notifications data",
+            })
+            .code(200);
     } catch (error) {
         return h
             .response({ code: 500, error: error, message: error.message })
             .code(500);
     }
-}
+};
