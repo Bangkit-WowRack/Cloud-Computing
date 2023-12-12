@@ -1,3 +1,4 @@
 node_modules
 .env
 cloudbuild.yaml
+firebase-credential-cicd-cloudraya-app.json
