@@ -6,12 +6,10 @@ import { registerDevice } from "../controller/registerDevice.js";
 import { destroyUsedOTP } from "../controller/destroyUsedOTP.js";
 import { handleJwtError } from "./errorHandling.js";
 import { decryptAuthData } from "../util/decryptData.js";
-import { initializeApp } from "firebase-admin/app";
-import admin from "firebase-admin";
-import { getMessaging } from "firebase-admin/messaging";
 import moment from "moment-timezone";
 import Wreck from "@hapi/wreck";
-import { readFileSync } from "fs";
+import firebase from "./firebaseApp.js";
+import { Op } from "sequelize";
 // import serviceAccount from "../firebase-credential-cicd-cloudraya-app.json" assert { type: "json" };
 
 export const generateOTPcode = async (req, h) => {
@@ -187,36 +185,60 @@ export const sendingMail = async (req, h) => {
 
 export const sendingNotif = async (req, h) => {
     try {
-        const serviceAccount = JSON.parse(
-            readFileSync(
-                process.env.NODE_ENV !== "production"
-                    ? "./firebase-credential-cicd-cloudraya-app.json"
-                    : "/secret/app/firebase-credential-cicd-cloudraya-app.json",
-            ),
-        );
-        const receivedToken = req.payload.fcm_token;
-
-        initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-            projectId: "cicd-cloudraya-app",
-        });
+        const user_id = req.payload.user_id;
+        const fcm_token = await db.logged_device
+            .findAll({
+                where: {
+                    user_id: user_id,
+                    fcm_token: {
+                        [Op.ne]: null,
+                    },
+                },
+            })
+            .then((user) => {
+                if (user) {
+                    let fcm_token = [];
+                    for (let i = 0; i < user.length; i++) {
+                        fcm_token.push(user[i].token);
+                    }
+                    return fcm_token;
+                }
+            });
 
         const message = {
             notification: {
                 title: "Notif by FCM",
                 body: "This is a Test Notification",
             },
-            token: receivedToken,
+            tokens: fcm_token,
         };
 
-        getMessaging()
-            .send(message)
+        firebase
+            .getMessaging()
+            .sendMulticast(message)
             .then((response) => {
                 console.log("Successfully sent message:", response);
+                if (response.failureCount > 0) {
+                    const failedTokens = [];
+                    response.responses.forEach((resp, idx) => {
+                        if (!resp.success) {
+                            failedTokens.push(fcm_token[idx]);
+                        }
+                    });
+                    console.log(
+                        "List of tokens that caused failures: " + failedTokens,
+                    );
+                    return h
+                        .response({
+                            code: 200,
+                            message: "Successfully sent message with errors",
+                        })
+                        .code(200);
+                }
                 return h
                     .response({
+                        code: 200,
                         message: "Successfully sent message",
-                        token: receivedToken,
                     })
                     .code(200);
             })
@@ -309,33 +331,28 @@ export const verifyFCMtoken = async (req, h) => {
         );
         const user_id = detail_user.data.id;
 
-        const serviceAccount = JSON.parse(
-            readFileSync(
-                process.env.NODE_ENV !== "production"
-                    ? "./firebase-credential-cicd-cloudraya-app.json"
-                    : "/secret/app/firebase-credential-cicd-cloudraya-app.json",
-            ),
-        );
-
-        initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-            projectId: "cicd-cloudraya-app",
-        });
-
-        admin
+        firebase
             .auth()
             .verifyIdToken(fcm_token)
             .then(async (decodedToken) => {
                 console.log("Token is valid", decodedToken);
-                await db.logged_device.update(
-                    { fcm_token: fcm_token },
-                    {
-                        where: {
-                            device_id: device_id,
-                            user_id: user_id,
+                try {
+                    await db.logged_device.update(
+                        { fcm_token: fcm_token },
+                        {
+                            where: {
+                                device_id: device_id,
+                                user_id: user_id,
+                            },
                         },
-                    },
-                );
+                    );
+                } catch (error) {
+                    return h.response({
+                        code: 500,
+                        error: error,
+                        message: "Error updating device data",
+                    });
+                }
                 return h
                     .response({ code: 200, message: "FCM Token is valid" })
                     .code(200);
@@ -343,12 +360,29 @@ export const verifyFCMtoken = async (req, h) => {
             .catch((error) => {
                 console.error("Invalid token", error);
                 return h
-                    .response({ code: 400, message: error.message })
+                    .response({
+                        code: 400,
+                        error: error,
+                        message: "Invalid FCM Token",
+                    })
                     .code(400);
             });
     } catch (error) {
-        if (error.isBoom)
-            return h.response(error.data.payload).code(error.data.payload.code);
+        if (error.isBoom) {
+            const { data } = error;
+            if (!data)
+                return h
+                    .response({
+                        code: 500,
+                        error: error,
+                        message: "Internal server error",
+                    })
+                    .code(500);
+            if (error.data)
+                return h
+                    .response(error.data.payload)
+                    .code(error.data.payload.code);
+        }
         return h
             .response({ code: 500, error: error, message: error.message })
             .code(500);
