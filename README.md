@@ -1,9 +1,7 @@
 # Cloud Computing Team APIs
 This repository includes all of Application Programming Interface to develop CloudRaya Mobile App that have main feature to detect anomaly metrics happen in CloudRaya's Virtual Machine to their respective users
 
-## Documentation
-
-# Dokumentasi API Detect Anomaly
+# Documentations API - Detect Anomaly
 
 ## Template Response:
 
