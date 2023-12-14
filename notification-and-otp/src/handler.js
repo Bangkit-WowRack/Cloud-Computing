@@ -8,8 +8,9 @@ import { handleJwtError } from "./errorHandling.js";
 import { decryptAuthData } from "../util/decryptData.js";
 import moment from "moment-timezone";
 import Wreck from "@hapi/wreck";
-import firebase from "./firebaseApp.js";
+// import { messaging } from "./firebaseApp.js";
 import { Op } from "sequelize";
+import firebase from "./firebaseApp.js";
 // import serviceAccount from "../firebase-credential-cicd-cloudraya-app.json" assert { type: "json" };
 
 export const generateOTPcode = async (req, h) => {
@@ -186,6 +187,7 @@ export const sendingMail = async (req, h) => {
 export const sendingNotif = async (req, h) => {
     try {
         const user_id = req.payload.user_id;
+        const { title, body } = req.payload;
         const fcm_token = await db.logged_device
             .findAll({
                 where: {
@@ -199,22 +201,35 @@ export const sendingNotif = async (req, h) => {
                 if (user) {
                     let fcm_token = [];
                     for (let i = 0; i < user.length; i++) {
-                        fcm_token.push(user[i].token);
+                        // console.log(`${i}: ` + user[i].fcm_token);
+                        if (user[i].expired_at > Math.floor(Date.now()))
+                            fcm_token.push(user[i].fcm_token);
                     }
                     return fcm_token;
+                } else {
+                    return undefined;
                 }
+            });
+
+        if (!fcm_token)
+            return h.response({
+                code: 404,
+                error: "User did not have FCM Token registered",
+                message: "FCM token not found",
             });
 
         const message = {
             notification: {
-                title: "Notif by FCM",
-                body: "This is a Test Notification",
+                title: title,
+                body: body,
             },
+            priority: "high",
             tokens: fcm_token,
         };
 
-        firebase
-            .getMessaging()
+        const wait_send = firebase.messaging();
+
+        return await wait_send
             .sendMulticast(message)
             .then((response) => {
                 console.log("Successfully sent message:", response);
@@ -322,7 +337,7 @@ export const verifyFCMtoken = async (req, h) => {
         },
         json: true,
     };
-    const { fcm_token, device_id } = req.payload;
+    const { fcm_token, device_token } = req.payload;
 
     try {
         const { payload: detail_user } = await Wreck.get(
@@ -331,41 +346,32 @@ export const verifyFCMtoken = async (req, h) => {
         );
         const user_id = detail_user.data.id;
 
-        firebase
-            .auth()
-            .verifyIdToken(fcm_token)
-            .then(async (decodedToken) => {
-                console.log("Token is valid", decodedToken);
-                try {
-                    await db.logged_device.update(
-                        { fcm_token: fcm_token },
-                        {
-                            where: {
-                                device_id: device_id,
-                                user_id: user_id,
-                            },
-                        },
-                    );
-                } catch (error) {
-                    return h.response({
-                        code: 500,
-                        error: error,
-                        message: "Error updating device data",
-                    });
+        return await db.logged_device
+            .update(
+                { fcm_token: fcm_token },
+                {
+                    where: {
+                        device_id: device_token,
+                        user_id: user_id,
+                    },
+                },
+            )
+            .then((result) => {
+                if (result === 0) {
+                    return h
+                        .response({
+                            code: 404,
+                            message: "No matching device found",
+                        })
+                        .code(404);
+                } else {
+                    return h
+                        .response({
+                            code: 200,
+                            message: "FCM Token successfully registered",
+                        })
+                        .code(200);
                 }
-                return h
-                    .response({ code: 200, message: "FCM Token is valid" })
-                    .code(200);
-            })
-            .catch((error) => {
-                console.error("Invalid token", error);
-                return h
-                    .response({
-                        code: 400,
-                        error: error,
-                        message: "Invalid FCM Token",
-                    })
-                    .code(400);
             });
     } catch (error) {
         if (error.isBoom) {
