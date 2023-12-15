@@ -42,7 +42,7 @@ export const routes = [
         handler: getUserDetail,
     },
     {
-        method: "PUT",
+        method: "POST",
         path: "/v1/api/gateway/user/auth/logout",
         handler: userLogout,
     },

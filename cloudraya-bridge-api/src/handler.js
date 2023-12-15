@@ -224,10 +224,11 @@ export const getUserDetail = async (req, h) => {
 
 export const userLogout = async (req, h) => {
     try {
-        const { user_id } = req.payload;
-        await db.logged_device.deleteAll({
+        const { user_id, device_token } = req.payload;
+        await db.logged_device.destroy({
             where: {
                 user_id: user_id,
+                device_id: device_token,
             },
         });
         return h.response({ code: 200, message: "success" }).code(200);
