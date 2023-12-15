@@ -14,7 +14,7 @@ export const getAnomalyDetect = async (req, h) => {
             json: true,
         };
 
-        let vm_name, user_id, user_email;
+        let vm_name, user_id, user_email, timezone;
         await db.vm_list
             .findOne({
                 where: {
@@ -35,20 +35,24 @@ export const getAnomalyDetect = async (req, h) => {
                 },
             })
             .then((user) => {
-                if (user) user_email = user.email;
+                if (user) {
+                    user_email = user.email;
+                    timezone = user.timezone;
+                }
             });
 
-        let email_body = { vm_name: vm_name, vm_id: vm_id };
-        let sendmail_payload = {
-            headers: {
-                "Content-Type": "application/json",
-            },
-            payload: JSON.stringify({
-                email: user_email,
-                email_body: email_body,
-                anomaly: true,
-            }),
-            json: true,
+        const sendmail_payload = (email_body) => {
+            return {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                payload: JSON.stringify({
+                    email: user_email,
+                    email_body: email_body,
+                    anomaly: true,
+                }),
+                json: true,
+            };
         };
 
         const sendMail = async (sendmail_payload) => {
@@ -58,18 +62,18 @@ export const getAnomalyDetect = async (req, h) => {
             );
         };
 
-        let notif_title, notif_body;
-        let sendnotif_payload = {
-            headers: {
-                Authorization: `${req.headers.authorization}`,
-                "Content-Type": "application/json",
-            },
-            payload: JSON.stringify({
-                user_id: user_id,
-                title: notif_title,
-                body: notif_body,
-            }),
-            json: true,
+        const sendnotif_payload = (notif_title, notif_body) => {
+            return {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                payload: JSON.stringify({
+                    user_id: user_id,
+                    title: notif_title,
+                    body: notif_body,
+                }),
+                json: true,
+            };
         };
         const sendNotif = async (sendnotif_payload) => {
             const { res, payload: vm_usage_payload } = await Wreck.post(
@@ -108,12 +112,26 @@ export const getAnomalyDetect = async (req, h) => {
                             cpu_anomaly_detected++;
 
                             // Send to email and notif to mobile
-                            email_body.anomaly_type = "CPU";
+                            let email_body = {
+                                vm_name: vm_name,
+                                vm_id: vm_id,
+                                timezone: timezone,
+                                anomaly_type: "CPU",
+                            };
 
                             try {
-                                notif_title = "CPU Anomaly Detected";
+                                await sendMail(sendmail_payload(email_body));
+                            } catch (error) {
+                                console.error(error.message);
+                                throw error;
+                            }
 
-                                await sendNotif();
+                            try {
+                                let notif_title = "CPU Anomaly Detected";
+                                let notif_body = `Check your virtual machine (${vm_name}) now to make sure the root cause`;
+                                await sendNotif(
+                                    sendnotif_payload(notif_title, notif_body),
+                                );
                             } catch (error) {
                                 console.error(error.message);
                                 throw error;
@@ -145,10 +163,26 @@ export const getAnomalyDetect = async (req, h) => {
                             memory_anomaly_detected++;
 
                             // Send to email and notif to mobile
-                            email_body.anomaly_type = "Memory";
+                            let email_body = {
+                                vm_name: vm_name,
+                                vm_id: vm_id,
+                                timezone: timezone,
+                                anomaly_type: "Memory",
+                            };
 
                             try {
-                                await sendMail(sendmail_payload);
+                                await sendMail(sendmail_payload(email_body));
+                            } catch (error) {
+                                console.error(error.message);
+                                throw error;
+                            }
+
+                            try {
+                                let notif_title = "Memory Anomaly Detected";
+                                let notif_body = `Check your virtual machine (${vm_name}) now to make sure the root cause`;
+                                await sendNotif(
+                                    sendnotif_payload(notif_title, notif_body),
+                                );
                             } catch (error) {
                                 console.error(error.message);
                                 throw error;
