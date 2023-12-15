@@ -58,6 +58,26 @@ export const getAnomalyDetect = async (req, h) => {
             );
         };
 
+        let notif_title, notif_body;
+        let sendnotif_payload = {
+            headers: {
+                Authorization: `${req.headers.authorization}`,
+                "Content-Type": "application/json",
+            },
+            payload: JSON.stringify({
+                user_id: user_id,
+                title: notif_title,
+                body: notif_body,
+            }),
+            json: true,
+        };
+        const sendNotif = async (sendnotif_payload) => {
+            const { res, payload: vm_usage_payload } = await Wreck.post(
+                `https://cloudraya.e-cloud.ch/v1/api/gateway/user/auth/send-notif`,
+                sendnotif_payload,
+            );
+        };
+
         let count = 0;
         // let single_anomaly = false;
         let cpu_anomaly_detected = 0;
@@ -89,13 +109,15 @@ export const getAnomalyDetect = async (req, h) => {
 
                             // Send to email and notif to mobile
                             email_body.anomaly_type = "CPU";
-                            // single_anomaly = true;
-                            // try {
-                            //     await sendMail(sendmail_payload);
-                            // } catch (error) {
-                            //     console.error(error.message);
-                            //     throw error;
-                            // }
+
+                            try {
+                                notif_title = "CPU Anomaly Detected";
+
+                                await sendNotif();
+                            } catch (error) {
+                                console.error(error.message);
+                                throw error;
+                            }
 
                             // Save notification in DB
                             await db.notifications.create({
@@ -124,13 +146,13 @@ export const getAnomalyDetect = async (req, h) => {
 
                             // Send to email and notif to mobile
                             email_body.anomaly_type = "Memory";
-                            // single_anomaly = true;
-                            // try {
-                            //     await sendMail(sendmail_payload);
-                            // } catch (error) {
-                            //     console.error(error.message);
-                            //     throw error;
-                            // }
+
+                            try {
+                                await sendMail(sendmail_payload);
+                            } catch (error) {
+                                console.error(error.message);
+                                throw error;
+                            }
 
                             // Save notification in DB
                             await db.notifications.create({
