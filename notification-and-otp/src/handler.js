@@ -152,7 +152,12 @@ export const sendingMail = async (req, h) => {
         const { from_email, email_subject, email, email_body, anomaly } =
             req.payload;
         if (anomaly) {
-            const time = moment().tz(email_body.timezone).format();
+            let time;
+            if (moment.tz.zone(email_body.timezone)) {
+                time = moment().tz(email_body.timezone).format();
+            } else {
+                throw new Error(`Invalid timezone: ${email_body.timezone}`);
+            }
             const anomaly_from_email =
                 "CloudRaya Anomaly Detection System <bangkitwowrack@gmail.com>";
             const anomaly_email_body = `
