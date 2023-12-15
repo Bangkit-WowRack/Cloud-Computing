@@ -224,10 +224,9 @@ export const getUserDetail = async (req, h) => {
 
 export const userLogout = async (req, h) => {
     try {
-        const { user_id, device_token } = req.payload;
+        const { device_token } = req.payload;
         await db.logged_device.destroy({
             where: {
-                user_id: user_id,
                 device_id: device_token,
             },
         });
